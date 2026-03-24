@@ -9,17 +9,27 @@ public class Game1 : Game
     private GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
-    private Vector2 _playerPos = new Vector2(400, 300);
+    private RenderTarget2D _renderTarget;
+    private SamplerState _pointSampler = SamplerState.PointClamp;
+
+    private static int _virtualWidth = 150;
+    private static int _virtualHeight = 150;
+    private int _windowWidth = _virtualWidth * 4;
+    private int _windowHeight = _virtualHeight * 4;
+    
+    private Vector2 _playerPos = new Vector2(120, 90);
     private Texture2D _playerTempTexture;
-    private float _playerSpeed = 200;
+    private float _playerSpeed = 50;
     
 
     public Game1()
     {
         _graphics = new GraphicsDeviceManager(this);
 
-        _graphics.PreferredBackBufferWidth = 700;
-        _graphics.PreferredBackBufferHeight = 700;
+        _graphics.PreferredBackBufferWidth = _windowWidth;
+        _graphics.PreferredBackBufferHeight = _windowHeight;
+
+        _graphics.ApplyChanges();
         
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
@@ -34,6 +44,11 @@ public class Game1 : Game
 
     protected override void LoadContent()
     {
+        _renderTarget = new RenderTarget2D(
+            GraphicsDevice,
+            _virtualWidth,
+            _virtualHeight);
+        
         _spriteBatch = new SpriteBatch(GraphicsDevice);
         
         _playerTempTexture = new Texture2D(GraphicsDevice, 1, 1);
@@ -78,11 +93,42 @@ public class Game1 : Game
 
     protected override void Draw(GameTime gameTime)
     {
-        GraphicsDevice.Clear(Color.CornflowerBlue);
+        GraphicsDevice.Clear(Color.DarkSlateGray);
+        
+        GraphicsDevice.SetRenderTarget(_renderTarget);
+        GraphicsDevice.Clear(Color.Black);
 
-        _spriteBatch.Begin();
+        _spriteBatch.Begin(samplerState: _pointSampler);
 
-        _spriteBatch.Draw(_playerTempTexture, _playerPos, null, Color.White, 0f, Vector2.Zero, new Vector2(20, 20), SpriteEffects.None, 0f);
+        var drawPos = new Vector2(
+            (int)_playerPos.X,
+            (int)_playerPos.Y
+            );
+        
+        _spriteBatch.Draw(
+            _playerTempTexture,
+            _playerPos,
+            null,
+            Color.White,
+            0f,
+            Vector2.Zero,
+            new Vector2(5, 5),
+            SpriteEffects.None,
+            0f
+        );
+        
+        _spriteBatch.End();
+
+        GraphicsDevice.SetRenderTarget(null);
+        GraphicsDevice.Clear(Color.Black);
+
+        _spriteBatch.Begin(samplerState: _pointSampler);
+
+        _spriteBatch.Draw(
+            _renderTarget,
+            new Rectangle(0, 0, _windowWidth, _windowHeight),
+            Color.White
+        );
 
         _spriteBatch.End();
         
