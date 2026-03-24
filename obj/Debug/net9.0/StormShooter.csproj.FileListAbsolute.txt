@@ -31,3 +31,4 @@ C:\Users\User\documents\StormShooter\obj\Debug\net9.0\refint\StormShooter.dll
 C:\Users\User\documents\StormShooter\obj\Debug\net9.0\StormShooter.pdb
 C:\Users\User\documents\StormShooter\obj\Debug\net9.0\StormShooter.genruntimeconfig.cache
 C:\Users\User\documents\StormShooter\obj\Debug\net9.0\ref\StormShooter.dll
+C:\Users\User\Documents\StormShooter\obj\Debug\net9.0\StormShooter.sourcelink.json
