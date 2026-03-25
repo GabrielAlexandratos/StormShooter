@@ -7,23 +7,27 @@ namespace StormShooter;
 
 public class Game1 : Game
 {
-    private GraphicsDeviceManager _graphics;
+    private readonly GraphicsDeviceManager _graphics;
     private SpriteBatch _spriteBatch;
 
     private RenderTarget2D _renderTarget;
-    private SamplerState _pointSampler = SamplerState.PointClamp;
+    private readonly SamplerState _pointSampler = SamplerState.PointClamp;
 
-    private static int _virtualWidth = 300;
-    private static int _virtualHeight = 300;
-    private static int _windowScale = 2;
-    private int _windowWidth = _virtualWidth * _windowScale;
-    private int _windowHeight = _virtualHeight * _windowScale;
-    
-    private Vector2 _playerPos = new Vector2(120, 90);
-    private Texture2D _playerTempTexture;
-    private float _playerSpeed = 50;
-    private float _playerRotation;
-    
+    private static readonly int VirtualWidth = Settings.VirtualWidth;
+    private static readonly int VirtualHeight = Settings.VirtualHeight;
+    private static readonly int WindowScale = Settings.WindowScale;
+
+    private readonly int _windowWidth = VirtualWidth * WindowScale;
+    private readonly int _windowHeight = VirtualHeight * WindowScale;
+
+    private Vector2 _playerPos = new Vector2(150, 150);
+    private Texture2D _pixel;
+
+    private readonly float _playerSpeed = Settings.PlayerSpeed;
+
+    private Vector2 _gunPos;
+    private float _gunRotation;
+    private bool _gunFlip;
 
     public Game1()
     {
@@ -31,106 +35,105 @@ public class Game1 : Game
 
         _graphics.PreferredBackBufferWidth = _windowWidth;
         _graphics.PreferredBackBufferHeight = _windowHeight;
-
         _graphics.ApplyChanges();
-        
+
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
-    }
-
-    protected override void Initialize()
-    {
-        // TODO: Add your initialization logic here
-
-        base.Initialize();
     }
 
     protected override void LoadContent()
     {
         _renderTarget = new RenderTarget2D(
             GraphicsDevice,
-            _virtualWidth,
-            _virtualHeight);
-        
-        _spriteBatch = new SpriteBatch(GraphicsDevice);
-        
-        _playerTempTexture = new Texture2D(GraphicsDevice, 1, 1);
-        _playerTempTexture.SetData([Color.White]);
+            VirtualWidth,
+            VirtualHeight
+        );
 
-        // TODO: use this.Content to load your game content here
+        _spriteBatch = new SpriteBatch(GraphicsDevice);
+
+        _pixel = new Texture2D(GraphicsDevice, 1, 1);
+        _pixel.SetData(new[] { Color.White });
     }
 
     protected override void Update(GameTime gameTime)
     {
-        if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+        if (Keyboard.GetState().IsKeyDown(Keys.Escape))
             Exit();
 
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
+        // Initializing keyboard and mouse for input
+        var kb = Keyboard.GetState();
         var mouse = Mouse.GetState();
+
+        // Player movement
+        if (kb.IsKeyDown(Keys.W)) _playerPos.Y -= _playerSpeed * dt;
+        if (kb.IsKeyDown(Keys.S)) _playerPos.Y += _playerSpeed * dt;
+        if (kb.IsKeyDown(Keys.A)) _playerPos.X -= _playerSpeed * dt;
+        if (kb.IsKeyDown(Keys.D)) _playerPos.X += _playerSpeed * dt;
+
         Vector2 mouseScreen = new Vector2(mouse.X, mouse.Y);
-        Vector2 mouseWorld = mouseScreen / _windowScale;
+        Vector2 mouseWorld = mouseScreen / WindowScale;
 
         Vector2 direction = mouseWorld - _playerPos;
-        
-        if (direction != Vector2.Zero)
+
+        if (direction.LengthSquared() > 0.0001f)
             direction.Normalize();
-            _playerRotation = (float)Math.Atan2(direction.Y, direction.X);
-        
-        
-        var keyboard = Keyboard.GetState();
+        else
+            direction = Vector2.Zero;
 
-        // Vertical movement
-        if (keyboard.IsKeyDown(Keys.W))
-        {
-            _playerPos.Y -= _playerSpeed * dt;
-        }
-        if (keyboard.IsKeyDown(Keys.S))
-        {
-            _playerPos.Y += _playerSpeed * dt;
-        }
-
-        // Horizontal movement
-        if (keyboard.IsKeyDown(Keys.A))
-        {
-            _playerPos.X -= _playerSpeed * dt;
-        }
-        if (keyboard.IsKeyDown(Keys.D))
-        {
-            _playerPos.X += _playerSpeed * dt;
-        }
-
-        // TODO: Add your update logic here
+        // Handle the gun updating
+        _gunPos = _playerPos + direction * 6f;
+        _gunRotation = (float)Math.Atan2(direction.Y, direction.X);
+        _gunFlip = direction.X < 0;
 
         base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime)
     {
-        GraphicsDevice.Clear(Color.DarkSlateGray);
-        
         GraphicsDevice.SetRenderTarget(_renderTarget);
         GraphicsDevice.Clear(Color.Black);
 
         _spriteBatch.Begin(samplerState: _pointSampler);
 
-        var drawPos = new Vector2(
+        // Snapping to the pixel perfect resolution
+        var playerDrawPos = new Vector2(
             (int)_playerPos.X,
             (int)_playerPos.Y
-            );
-        
+        );
+
+        var gunDrawPos = new Vector2(
+            (int)_gunPos.X,
+            (int)_gunPos.Y
+        );
+
+        // Drawing player
         _spriteBatch.Draw(
-            _playerTempTexture,
-            _playerPos,
+            _pixel,
+            playerDrawPos,
             null,
             Color.White,
-            rotation: _playerRotation,
+            0f,
             new Vector2(0.5f, 0.5f),
             new Vector2(10, 10),
             SpriteEffects.None,
             0f
         );
-        
+
+        // Drawing gun
+        _spriteBatch.Draw(
+            _pixel,
+            gunDrawPos,
+            null,
+            Color.Red,
+            _gunRotation,
+            new Vector2(0f, 0.5f),
+            new Vector2(11, 4),
+            _gunFlip ? SpriteEffects.FlipHorizontally : SpriteEffects.None,
+            0f
+        );
+
         _spriteBatch.End();
 
         GraphicsDevice.SetRenderTarget(null);
@@ -145,7 +148,7 @@ public class Game1 : Game
         );
 
         _spriteBatch.End();
-        
+
         base.Draw(gameTime);
     }
 }
