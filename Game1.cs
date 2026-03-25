@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -12,14 +13,16 @@ public class Game1 : Game
     private RenderTarget2D _renderTarget;
     private SamplerState _pointSampler = SamplerState.PointClamp;
 
-    private static int _virtualWidth = 150;
-    private static int _virtualHeight = 150;
-    private int _windowWidth = _virtualWidth * 4;
-    private int _windowHeight = _virtualHeight * 4;
+    private static int _virtualWidth = 300;
+    private static int _virtualHeight = 300;
+    private static int _windowScale = 2;
+    private int _windowWidth = _virtualWidth * _windowScale;
+    private int _windowHeight = _virtualHeight * _windowScale;
     
     private Vector2 _playerPos = new Vector2(120, 90);
     private Texture2D _playerTempTexture;
     private float _playerSpeed = 50;
+    private float _playerRotation;
     
 
     public Game1()
@@ -64,6 +67,17 @@ public class Game1 : Game
 
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
+        var mouse = Mouse.GetState();
+        Vector2 mouseScreen = new Vector2(mouse.X, mouse.Y);
+        Vector2 mouseWorld = mouseScreen / _windowScale;
+
+        Vector2 direction = mouseWorld - _playerPos;
+        
+        if (direction != Vector2.Zero)
+            direction.Normalize();
+            _playerRotation = (float)Math.Atan2(direction.Y, direction.X);
+        
+        
         var keyboard = Keyboard.GetState();
 
         // Vertical movement
@@ -110,9 +124,9 @@ public class Game1 : Game
             _playerPos,
             null,
             Color.White,
-            0f,
-            Vector2.Zero,
-            new Vector2(5, 5),
+            rotation: _playerRotation,
+            new Vector2(0.5f, 0.5f),
+            new Vector2(10, 10),
             SpriteEffects.None,
             0f
         );
