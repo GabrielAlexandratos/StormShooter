@@ -97,17 +97,25 @@ public class Game1 : Game
 
         _spriteBatch.Begin(samplerState: _pointSampler);
 
+        for (int x = 0; x < VirtualWidth; x += 10)
+        {
+            for (int y = 0; y < VirtualHeight; y += 10)
+            {
+                _spriteBatch.Draw(_pixel, new Vector2(x, y), Color.DarkGray * 0.2f);
+            }
+        }
+        
         // Snapping to the pixel perfect resolution
         var playerDrawPos = new Vector2(
             (int)_playerPos.X,
             (int)_playerPos.Y
         );
-
         var gunDrawPos = new Vector2(
             (int)_gunPos.X,
             (int)_gunPos.Y
         );
 
+        
         // Drawing player
         _spriteBatch.Draw(
             _pixel,
@@ -137,7 +145,7 @@ public class Game1 : Game
         _spriteBatch.End();
 
         GraphicsDevice.SetRenderTarget(null);
-        GraphicsDevice.Clear(Color.Black);
+        GraphicsDevice.Clear(new Color(10, 10, 10));
 
         _spriteBatch.Begin(samplerState: _pointSampler);
 

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\User\\documents\\stormshooter\\StormShooter.csproj": {}
+    "C:\\Users\\User\\Documents\\StormShooter\\StormShooter.csproj": {}
   },
   "projects": {
-    "C:\\Users\\User\\documents\\stormshooter\\StormShooter.csproj": {
+    "C:\\Users\\User\\Documents\\StormShooter\\StormShooter.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\User\\documents\\stormshooter\\StormShooter.csproj",
+        "projectUniqueName": "C:\\Users\\User\\Documents\\StormShooter\\StormShooter.csproj",
         "projectName": "StormShooter",
-        "projectPath": "C:\\Users\\User\\documents\\stormshooter\\StormShooter.csproj",
+        "projectPath": "C:\\Users\\User\\Documents\\StormShooter\\StormShooter.csproj",
         "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\User\\documents\\stormshooter\\obj\\",
+        "outputPath": "C:\\Users\\User\\Documents\\StormShooter\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config"
