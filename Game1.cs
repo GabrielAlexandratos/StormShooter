@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -28,6 +29,10 @@ public class Game1 : Game
     private Vector2 _gunPos;
     private float _gunRotation;
     private bool _gunFlip;
+    
+    private List<Bullet> _bullets = new List<Bullet>();
+    private MouseState _previousMouse;
+    Random _random = new Random();
 
     public Game1()
     {
@@ -65,6 +70,10 @@ public class Game1 : Game
         // Initializing keyboard and mouse for input
         var kb = Keyboard.GetState();
         var mouse = Mouse.GetState();
+        
+        bool justClicked =
+            mouse.LeftButton == ButtonState.Pressed &&
+            _previousMouse.LeftButton == ButtonState.Released;
 
         // Player movement
         if (kb.IsKeyDown(Keys.W)) _playerPos.Y -= _playerSpeed * dt;
@@ -87,6 +96,33 @@ public class Game1 : Game
         _gunRotation = (float)Math.Atan2(direction.Y, direction.X);
         _gunFlip = direction.X < 0;
 
+        // Shoot on left mouse click
+        if (justClicked)
+        {
+            float spread = 0.2f;
+            float angleOffset = ((float)_random.NextDouble() - 0.5f) * spread;
+            
+            float angle = (float)Math.Atan2(direction.Y, direction.X);
+            angle += angleOffset;
+
+            Vector2 shootDirection = new Vector2(
+                (float)Math.Cos(angle),
+                (float)Math.Sin(angle)
+                );
+
+            float speed = Settings.BulletSpeed;
+            Vector2 velocity = shootDirection * speed;
+            Vector2 muzzlePos = _gunPos + shootDirection * 8f;
+            _bullets.Add(new Bullet(muzzlePos, velocity));
+        }
+
+        foreach (var bullet in _bullets)
+        {
+            bullet.Update(dt);
+        }
+
+        _previousMouse = mouse;
+        
         base.Update(gameTime);
     }
 
@@ -105,7 +141,7 @@ public class Game1 : Game
             }
         }
         
-        // Snapping to the pixel perfect resolution
+        // Snapping to the pixel perfect grid/resolution
         var playerDrawPos = new Vector2(
             (int)_playerPos.X,
             (int)_playerPos.Y
@@ -141,6 +177,12 @@ public class Game1 : Game
             _gunFlip ? SpriteEffects.FlipHorizontally : SpriteEffects.None,
             0f
         );
+        
+        // Drawing bullets
+        foreach (var bullet in _bullets)
+        {
+            bullet.Draw(_spriteBatch, _pixel);
+        }
 
         _spriteBatch.End();
 
