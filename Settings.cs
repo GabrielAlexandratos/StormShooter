@@ -11,6 +11,4 @@ public class Settings
     // Player settings
     public const int PlayerSpeed = 50;
     public const float BulletSpeed = 300f;
-
-
 }

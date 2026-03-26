@@ -14,6 +14,12 @@ public class Bullet
         Position = position;
         Velocity = velocity;
     }
+    
+    public bool IsOffscreen(int width, int height)
+    {
+        return Position.X < 0 || Position.X > width ||
+               Position.Y < 0 || Position.Y > height;
+    }
 
     public void Update(float deltaTime)
     {
