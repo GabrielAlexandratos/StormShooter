@@ -6,7 +6,7 @@ public class GunData
     {
         FireRate = 8.5f,
         Spread = 0.14f,
-        BulletSpeed = 240f,
+        BulletSpeed = 320f,
         Automatic = false,
         
         ShakeStrength = 7.5f,
@@ -18,7 +18,7 @@ public class GunData
     {
         FireRate = 6.5f,
         Spread = 0.2f,
-        BulletSpeed = 240f,
+        BulletSpeed = 320f,
         Automatic = true,
         
         ShakeStrength = 4.6f,

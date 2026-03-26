@@ -17,8 +17,8 @@ public class Bullet
     
     public bool IsOffscreen(int width, int height)
     {
-        return Position.X < 0 || Position.X > width ||
-               Position.Y < 0 || Position.Y > height;
+        return Position.X < -300 || Position.X > width + 300 ||
+               Position.Y < -300 || Position.Y > height + 300;
     }
 
     public void Update(float deltaTime)
