@@ -1,7 +1,16 @@
+using System.Drawing;
+
 namespace StormShooter;
 
 public class Gun
 {
+    
+    public float Damage;
+    public float MagSize;
+    public float ReloadTime;
+
+    public float HitStop;
+    
     public float FireRate;
     public float Spread;
     public float BulletSpeed;

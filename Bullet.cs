@@ -15,6 +15,7 @@ public class Bullet
         Velocity = velocity;
     }
     
+    // Check if bullets are far enough offscreen to be removed
     public bool IsOffscreen(int width, int height)
     {
         return Position.X < -300 || Position.X > width + 300 ||
@@ -23,11 +24,14 @@ public class Bullet
 
     public void Update(float deltaTime)
     {
+        
+        // Move each frame
         Position += Velocity * deltaTime;
     }
 
     public void Draw(SpriteBatch spriteBatch, Texture2D texture)
     {
+        // Draw bullets at their position and rotation
         var drawPos = new Vector2((int)Position.X, (int)Position.Y);
         
         float rotation = (float)Math.Atan2(Velocity.Y, Velocity.X);

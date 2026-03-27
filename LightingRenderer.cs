@@ -180,6 +180,7 @@ public class LightingRenderer
         return _lightMap;
     }
 
+    // Drawing main layer light
     private void DrawCircle(SpriteBatch sb, Vector2 pos, float radius, Color color)
     {
         var origin = new Vector2(_circleHard.Width / 2f, _circleHard.Height / 2f);

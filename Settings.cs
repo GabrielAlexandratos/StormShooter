@@ -6,7 +6,7 @@ public class Settings
     public const int VirtualWidth = 300;
     public const int VirtualHeight = 300;
     
-    public const int WindowScale = 2;
+    public const int WindowScale = 3;
     
     // Player settings
     public const int PlayerSpeed = 50;
