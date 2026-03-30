@@ -9,6 +9,5 @@ public class Settings
     public const int WindowScale = 3;
     
     // Player settings
-    public const int PlayerSpeed = 50;
-    public const float BulletSpeed = 300f;
+    public const int PlayerSpeed = 70;
 }

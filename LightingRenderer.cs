@@ -108,7 +108,7 @@ public class LightingRenderer
     public void AddFlash(Vector2 pos, float radius, Color tint, float duration)
         => _lights.Add(new LightSource(pos, radius, tint, duration));
 
-    public Texture2D BuildLightMap(SpriteBatch sb, Vector2 playerPos, float dt)
+    public Texture2D BuildLightMap(SpriteBatch sb, Vector2 playerPos, Vector2 cameraPos, float dt)
     {
         // update lights
         for (int i = _lights.Count - 1; i >= 0; i--)
@@ -136,13 +136,13 @@ public class LightingRenderer
 
         DrawCircle(
             sb,
-            playerPos,
+            playerPos - cameraPos,
             PlayerRadius * DimMultiplier,
             new Color(DimBrightness, DimBrightness, DimBrightness, 1f)
         );
         
         // Full brightness zone around player
-        DrawCircle(sb, playerPos, PlayerRadius, Color.White);
+        DrawCircle(sb, playerPos - cameraPos, PlayerRadius, Color.White);
 
         // only white lights affect visibility
         foreach (var l in _lights)
@@ -155,7 +155,7 @@ public class LightingRenderer
                 ? 1f
                 : MathHelper.Clamp(l.Lifetime / l.MaxLifetime, 0f, 1f);
 
-            DrawCircle(sb, l.Position, l.Radius, Color.White);
+            DrawCircle(sb, l.Position - cameraPos, l.Radius, Color.White);
         }
 
         sb.End();
@@ -172,7 +172,7 @@ public class LightingRenderer
                 ? 1f
                 : MathHelper.Clamp(l.Lifetime / l.MaxLifetime, 0f, 1f);
 
-            DrawGlow(sb, l.Position, l.Radius, l.Tint, a);
+            DrawGlow(sb, l.Position - cameraPos, l.Radius, l.Tint, a);
         }
 
         sb.End();

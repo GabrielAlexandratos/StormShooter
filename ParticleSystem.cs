@@ -44,7 +44,7 @@ public class ParticleSystem
 
             // Stretch based on speed
             float length = 1f + MathF.Min(speed * 0.006f, 3.5f);
-            float width = 0.7f;
+            float width = 0.55f;
 
             float size = p.Size * (1f - t * t);
 
@@ -52,7 +52,7 @@ public class ParticleSystem
                 pixel,
                 p.Position,
                 null,
-                p.Color * alpha,
+                p.Color,
                 rotation,
                 new Vector2(0.5f, 0.5f),
                 new Vector2(size * length, size * width),

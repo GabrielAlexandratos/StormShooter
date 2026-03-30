@@ -20,37 +20,38 @@ public class Game1 : Game
     private readonly int _windowWidth  = VirtualWidth * WindowScale;
     private readonly int _windowHeight = VirtualHeight * WindowScale;
 
-    private Vector2 _playerPos = new Vector2(150, 150);
     private Texture2D _pixel;
 
-    private readonly float _playerSpeed = Settings.PlayerSpeed;
+    private Player _player;
 
     private Gun _currentGun;
     private float _shotCooldown;
 
-    private Vector2 _gunPos;
-    private float _gunRotation;
-    private float _finalRotation;
-    private bool _gunFlip;
 
-    private readonly List<Bullet> _bullets = new();
+    private BulletManager _bulletManager;
     private MouseState _previousMouse;
 
     private readonly Random _random = new();
 
     private float _shakeTime;
     private float _shakeStrength;
-    private Vector2 _recoilOffset;
-    private float _recoilRotation;
-    private readonly float _recoilRecoverSpeed = 10f;
 
-    private float _hitStopTime = 0.05f;
+    private float _hitStopTime;
+
+    private Vector2 _cameraPos;
 
     private ParticleSystem _particles = new();
-    
-    private List<Enemy> _enemies = new();
+    private EnemyManager _enemyManager;
     
     private LightingRenderer _lighting;
+    
+    // Tiles
+    private Tile[,] _grid;
+    
+    private int _gridWidth = 200;
+    private int _gridHeight = 200;
+    
+    private int _tileSize = 10;
 
     // Custom multiply blend state for applying the lightmap
     private static readonly BlendState MultiplyBlend = new BlendState
@@ -80,7 +81,7 @@ public class Game1 : Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
         _pixel = new Texture2D(GraphicsDevice, 1, 1);
-        _pixel.SetData([Color.White]);
+        _pixel.SetData(new[] { Color.White });
 
         _currentGun = GunData.Rifle;
         
@@ -88,14 +89,33 @@ public class Game1 : Game
         {
             // Player light source settings
             PlayerRadius = 60f,
-            DimMultiplier = 100f,
+            DimMultiplier = 10f,
             DimBrightness = 0.35f
         };
 
-        _enemies.Add(new Enemy(new Vector2(100, 100)));
-        _enemies.Add(new Enemy(new Vector2(200, 100)));
-        _enemies.Add(new Enemy(new Vector2(200, 200)));
-        
+        _bulletManager = new BulletManager();
+        _enemyManager = new EnemyManager();
+
+        _enemyManager.Add(new Enemy(new Vector2(100, 100)));
+        _enemyManager.Add(new Enemy(new Vector2(200, 100)));
+        _enemyManager.Add(new Enemy(new Vector2(200, 200)));
+
+        LevelGenerator generator = new LevelGenerator();
+        _grid = new Tile[_gridWidth, _gridHeight];
+
+        var generated = generator.Generate(_gridWidth, _gridHeight);
+
+        for (int x = 0; x < _gridWidth; x++)
+        for (int y = 0; y < _gridHeight; y++)
+        {
+            _grid[x, y] = new Tile { Type = generated[x, y] };
+        }
+
+
+        Vector2 spawnPos = FindSpawnPosition();
+        _player = new Player(spawnPos, Settings.PlayerSpeed, _pixel);
+        _enemyManager.Add(new Enemy(spawnPos + new Vector2(50, 50)));
+
     }
 
     protected override void Update(GameTime gameTime)
@@ -107,43 +127,22 @@ public class Game1 : Game
         var kb = Keyboard.GetState();
         var mouse = Mouse.GetState();
         
+        Vector2 mouseWorld = _cameraPos + new Vector2(mouse.X, mouse.Y) / WindowScale;
+        
         if (_hitStopTime > 0f)
         {
             _hitStopTime -= dt;
             return;
         }
 
-        // Player movement
-        if (kb.IsKeyDown(Keys.W)) _playerPos.Y -= _playerSpeed * dt;
-        if (kb.IsKeyDown(Keys.S)) _playerPos.Y += _playerSpeed * dt;
-        if (kb.IsKeyDown(Keys.A)) _playerPos.X -= _playerSpeed * dt;
-        if (kb.IsKeyDown(Keys.D)) _playerPos.X += _playerSpeed * dt;
+        _player.Update(dt, kb, mouse, WindowScale, _cameraPos, IsWall);
 
         // Update enemies
-        foreach (var e in _enemies)
-        {
-            e.Update(dt);
-
-            // Enemy emits constant light
-            _lighting.AddLight(new LightSource(e.Position, 45f, Color.White * 1.5f, lifetime: 0.15f));
-        }
+        _enemyManager.Update(dt, _lighting);
 
         if (kb.IsKeyDown(Keys.D1)) _currentGun = GunData.Rifle;
         if (kb.IsKeyDown(Keys.D2)) _currentGun = GunData.Smg;
         if (kb.IsKeyDown(Keys.D3)) _currentGun = GunData.Pistol;
-
-        Vector2 mouseWorld = new Vector2(mouse.X, mouse.Y) / WindowScale;
-        Vector2 direction = mouseWorld - _playerPos;
-
-        if (direction.LengthSquared() > 0.0001f)
-            direction.Normalize();
-        else
-            direction = Vector2.Zero;
-
-        _gunPos = _playerPos + direction * 6f + _recoilOffset;
-        _gunRotation = (float)Math.Atan2(direction.Y, direction.X);
-        _finalRotation = _gunRotation + _recoilRotation;
-        _gunFlip = direction.X < 0;
 
         bool canShoot = _shotCooldown <= 0f;
         bool wantsToShoot =
@@ -157,21 +156,24 @@ public class Game1 : Game
         if (wantsToShoot && canShoot)
         {
             // Get all the data needed for a bullet to shoot
+            Vector2 playerPos = _player.Position;
+            Vector2 gunPos = _player.GunPos;
             float spread = _currentGun.Spread;
             float angleOffset = ((float)_random.NextDouble() - 0.5f) * spread;
+            Vector2 direction = mouseWorld - playerPos;
+            if (direction.LengthSquared() > 0.0001f)
+                direction.Normalize();
             float angle = (float)Math.Atan2(direction.Y, direction.X) + angleOffset;
 
             Vector2 shootDir = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
             Vector2 velocity = shootDir * _currentGun.BulletSpeed;
-            Vector2 muzzlePos = _gunPos + shootDir * 8f;
-
-            _bullets.Add(new Bullet(muzzlePos, velocity));
+            Vector2 muzzlePos = gunPos + shootDir * 8f;
+            _bulletManager.Spawn(muzzlePos, velocity);
 
             // Setting up gun impact fx variables
             _shakeTime = _currentGun.ShakeDuration;
             _shakeStrength = _currentGun.ShakeStrength;
-            _recoilOffset = -shootDir * _currentGun.Recoil * 1.3f;
-            _recoilRotation = (_random.NextSingle()) * 0.12f;
+            _player.ApplyRecoil(shootDir, _currentGun.Recoil * 1.3f, _random.NextSingle() * 0.12f);
             _shotCooldown = 1f / _currentGun.FireRate;
 
             // Muzzle flash: main layer light + colour glow
@@ -179,118 +181,34 @@ public class Game1 : Game
             _lighting.AddFlash(muzzlePos, 30f, Color.Yellow, duration: 0.10f);
         }
 
-        for (int i = _bullets.Count - 1; i >= 0; i--)
-        {
-            var b = _bullets[i];
-            b.Update(dt);
-
-            bool hit = false;
-
-            foreach (var e in _enemies)
-            {
-                float dist = Vector2.Distance(b.Position, e.Position);
-
-                if (dist < e.Radius)
-                {
-                    Vector2 dir = Vector2.Normalize(b.Velocity);
-                    Vector2 knockback = dir * 35f;
-
-                    e.Hit(knockback, _currentGun.Damage);
-
-                    // Hit stop + screen shake
-                    _hitStopTime = _currentGun.HitStop;
-                    _shakeTime = 0.03f;
-                    _shakeStrength = 0f;
-
-                    /*
-                    _particles.Add(new Particle
-                    {
-                        Position = e.Position,
-                        Velocity = Vector2.Zero,
-                        Life = 0.05f,
-                        MaxLife = 0.05f,
-                        Size = 7f,
-                        Rotation = 0f,
-                        Color = Color.White,
-                        Drag = 0f,
-                        Gravity = 0f
-                    });
-                    */
-
-                    // Spark particles on enemy hit spray in a cone shape
-                    int sparkCount = 5 + _random.Next(3);
-                    for (int j = 0; j < sparkCount; j++)
-                    {
-                        // Cone shape
-                        float angle = (float)Math.Atan2(dir.Y, dir.X)
-                                    + (_random.NextSingle() - 0.5f) * 1.8f; // ~±52°
-                        Vector2 sparkDir = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
-                        float speed2 = 180f + _random.NextSingle() * 320f; // updated speed
-
-                        // Alternate between red and yellow (blood/sparks)
-                        Color sparkColor = j % 2 == 0
-                            ? new Color(220, 30, 30)
-                            : new Color(255, 210, 80);
-
-                        _particles.Add(new Particle
-                        {
-                            Position = e.Position,
-                            Velocity = sparkDir * speed2,
-                            Life = 0.18f + _random.NextSingle() * 0.1f,
-                            MaxLife = 0.30f,
-                            Size = 6f + _random.NextSingle() * 4f,
-                            Rotation = angle,
-                            Color = sparkColor,
-                            Drag = 6f,    
-                            Gravity = 60f
-                        });
-                    }
-
-                    // White sparks
-                    for (int j = 0; j < 2; j++)
-                    {
-                        float offset = (_random.NextSingle() - 0.5f) * 0.5f;
-                        float chipAngle = (float)Math.Atan2(dir.Y, dir.X) + offset;
-                        Vector2 chipDir = new Vector2((float)Math.Cos(chipAngle), (float)Math.Sin(chipAngle));
-
-                        _particles.Add(new Particle
-                        {
-                            Position = e.Position,
-                            Velocity = chipDir * (400f + _random.NextSingle() * 300f),
-                            Life = 0.10f,
-                            MaxLife = 0.10f,
-                            Size = 5f,
-                            Rotation = chipAngle,
-                            Color = Color.White,
-                            Drag = 6f,
-                            Gravity = 0f
-                        });
-                    }
-
-                    hit = true;
-                    break;
-                }
-            }
-
-            if (hit || b.IsOffscreen(VirtualWidth, VirtualHeight))
-            {
-                _bullets.RemoveAt(i);
-            }
-            else
-            {
-                _lighting.AddLight(new LightSource(b.Position, 20f, Color.White, lifetime: 0.04f));
-                _lighting.AddLight(new LightSource(b.Position, 5f, Color.Orange, lifetime: 0.04f));
-            }
-        }
+        _bulletManager.Update(
+            dt,
+            _enemyManager.Enemies,
+            _particles,
+            _lighting,
+            _currentGun,
+            ref _hitStopTime,
+            ref _shakeTime,
+            ref _shakeStrength,
+            VirtualWidth,
+            VirtualHeight,
+            _random
+        );
 
         _previousMouse = mouse;
-        _recoilOffset = Vector2.Lerp(_recoilOffset, Vector2.Zero, dt * _recoilRecoverSpeed);
-        _recoilRotation = MathHelper.Lerp(_recoilRotation, 0f, dt * _recoilRecoverSpeed);
-
-        _enemies.RemoveAll(e => e.IsDead());
-
+        
         // Update particles
         _particles.Update(dt);
+        
+        // Camera look-ahead
+        Vector2 mouseScreen = new Vector2(mouse.X, mouse.Y);
+        Vector2 camMouseWorld = mouseWorld;
+
+        Vector2 lookOffset = (camMouseWorld - _player.Position) * 0.2f;
+
+        Vector2 cameraTarget = _player.Position + lookOffset - new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
+
+        _cameraPos = Vector2.Lerp(_cameraPos, cameraTarget, 10f * dt);
 
         base.Update(gameTime);
     }
@@ -299,40 +217,48 @@ public class Game1 : Game
     {
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        var lightMap = _lighting.BuildLightMap(_spriteBatch, _playerPos, dt);
+        var lightMap = _lighting.BuildLightMap(
+            _spriteBatch,
+            _player.Position,
+            _cameraPos,
+            dt
+        );
 
         // Draw game to render target
         GraphicsDevice.SetRenderTarget(_renderTarget);
         GraphicsDevice.Clear(new Color(30, 30, 30));
 
-        _spriteBatch.Begin(samplerState: _pointSampler);
+        _spriteBatch.Begin(
+            samplerState: _pointSampler,
+            transformMatrix: Matrix.CreateTranslation(-_cameraPos.X, -_cameraPos.Y, 0f)
+        );
+        
+        for (int x = 0; x < _gridWidth; x++)
+        for (int y = 0; y < _gridHeight; y++)
+        {
+            Vector2 pos = new Vector2(x * _tileSize, y * _tileSize);
 
-        // Background dots grid
-        for (int x = 0; x < VirtualWidth;  x += 10)
-        for (int y = 0; y < VirtualHeight; y += 10)
-            _spriteBatch.Draw(_pixel, new Vector2(x, y), Color.DarkGray * 0.6f);
+            Color color = _grid[x, y].Type switch
+            {
+                TileType.Empty => Color.DarkGray * 0.4f,
+                
+                TileType.Wall => Color.DarkSlateGray,
+                TileType.Cover => Color.LightGray,
+                _ => Color.Magenta
+            };
+            
+            _spriteBatch.Draw(_pixel, pos, null, color, 0f, Vector2.Zero, new Vector2(_tileSize, _tileSize), SpriteEffects.None, 0f);
+        }
 
-        // Player
-        _spriteBatch.Draw(_pixel,
-            new Vector2((int)_playerPos.X, (int)_playerPos.Y),
-            null, Color.White, 0f,
-            new Vector2(0.5f, 0.5f), new Vector2(10, 10),
-            SpriteEffects.None, 0f);
 
-        // Gun
-        _spriteBatch.Draw(_pixel,
-            new Vector2((int)_gunPos.X, (int)_gunPos.Y),
-            null, Color.Red, _finalRotation,
-            new Vector2(0f, 0.5f), new Vector2(11, 4),
-            _gunFlip ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0f);
+        // Player and gun
+        _player.Draw(_spriteBatch);
 
         // Bullets
-        foreach (var bullet in _bullets)
-            bullet.Draw(_spriteBatch, _pixel);
+        _bulletManager.Draw(_spriteBatch, _pixel);
 
         // Enemies
-        foreach (var e in _enemies)
-            e.Draw(_spriteBatch, _pixel);
+        _enemyManager.Draw(_spriteBatch, _pixel);
 
         // Particles
         _particles.Draw(_spriteBatch, _pixel);
@@ -341,7 +267,10 @@ public class Game1 : Game
 
         // Apply lights to the game world
         // This darkens the pixels that are not in the light
-        _spriteBatch.Begin(blendState: MultiplyBlend, samplerState: _pointSampler);
+        _spriteBatch.Begin(
+            blendState: MultiplyBlend,
+            samplerState: _pointSampler
+        );
         _spriteBatch.Draw(lightMap,
             new Rectangle(0, 0, VirtualWidth, VirtualHeight),
             Color.White);
@@ -360,7 +289,9 @@ public class Game1 : Game
                 (_random.NextSingle() - 0.5f) * _shakeStrength);
         }
 
-        _spriteBatch.Begin(samplerState: _pointSampler);
+        _spriteBatch.Begin(
+            samplerState: _pointSampler
+        );
         _spriteBatch.Draw(
             _renderTarget,
             new Rectangle((int)shakeOffset.X, (int)shakeOffset.Y, _windowWidth, _windowHeight),
@@ -374,5 +305,47 @@ public class Game1 : Game
     {
         _lighting?.Dispose();
         base.UnloadContent();
+    }
+
+
+    bool IsWall(Vector2 pos)
+    {
+        int tx = (int)(pos.X / _tileSize);
+        int ty = (int)(pos.Y / _tileSize);
+
+        if (tx < 0 || ty < 0 || tx >= _gridWidth || ty >= _gridHeight)
+            return true;
+
+        return _grid[tx, ty].Type == TileType.Wall;
+    }
+/*
+    Vector2 GetRandomDirection()
+    {
+        int r = _random.Next(4);
+
+        return r switch
+        {
+            0 => new Vector2(1, 0),
+            1 => new Vector2(-1, 0),
+            2 => new Vector2(0, 1),
+            _ => new Vector2(0, -1),
+        };
+    }
+    */
+    Vector2 FindSpawnPosition()
+    {
+        for (int i = 0; i < 1000; i++)
+        {
+            int x = _random.Next(_gridWidth);
+            int y = _random.Next(_gridHeight);
+
+            if (_grid[x, y].Type == TileType.Empty)
+            {
+                return new Vector2(x * _tileSize + _tileSize / 2f,
+                                   y * _tileSize + _tileSize / 2f);
+            }
+        }
+
+        return new Vector2(0, 0);
     }
 }

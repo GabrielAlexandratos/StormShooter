@@ -34,7 +34,7 @@ public class Enemy
     {
         Health -= damage;
         Velocity += force;
-        _flashTime = 0.05f;
+        _flashTime = 0.065f;
     }
     
     public bool IsDead() => Health <= 0;
