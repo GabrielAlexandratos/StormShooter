@@ -27,4 +27,6 @@ public class Gun
     public float DamageFalloffEnd = 0f;
     public float BulletScale = 1.5f;
     public bool UseSpeedVariation = false;
+    public bool CanBounce = false;
+    public int MaxBounces = 10;
 }

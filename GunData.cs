@@ -69,35 +69,35 @@ public class GunData
 
     public static Gun Smg = new Gun
     {
-        Damage = 1.5f,
-        MagSize = 30f,
-        ReloadTime = 2.5f,
+        Damage = 1f,
+        MagSize = 20f,
+        ReloadTime = 2f,
         
-        FireRate = 10.5f,
-        Spread = 0.3f,
+        FireRate = 9f,
+        Spread = 0.5f,
         BulletSpeed = _globalBulletSpeed,
         Automatic = true,
         
-        ShakeStrength = 5f,
-        ShakeDuration = 0.085f,
-        Recoil = 8f,
+        ShakeStrength = 30f,
+        ShakeDuration = 0.15f,
+        Recoil = 6f,
 
-        BulletsPerShot = 1,
-        SpreadAngle = 0.2f,
+        BulletsPerShot = 20,
+        SpreadAngle = 10f,
 
-        BurstCount = 1,
-        BurstDelay = 0f,
+        BurstCount = 10,
+        BurstDelay = 0.06f,
 
-        SpreadBloom = 0.05f,
-        SpreadRecovery = 3f,
+        SpreadBloom = 0.01f,
+        SpreadRecovery = 5f,
 
-        RecoilPerShot = 2.5f,
-        RecoilRecovery = 4f,
-
-        VelocityDecay = 80f,
-        MinBulletSpeed = 180f,
+        RecoilPerShot = 1.2f,
+        RecoilRecovery = 7f,
         
-        HitStop = _hitStopTime
+        HitStop = _hitStopTime,
+        
+        CanBounce =  true,
+        MaxBounces = 999
     };
     
     public static Gun Shotgun = new Gun
@@ -125,6 +125,9 @@ public class GunData
         ShakeStrength = 15f,
         ShakeDuration = 0.2f,
 
-        HitStop = _hitStopTime
+        HitStop = _hitStopTime,
+        
+        CanBounce = true,
+        MaxBounces = 10
     };
 }

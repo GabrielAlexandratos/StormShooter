@@ -103,7 +103,8 @@ public class GunController
                 shootDir * gun.BulletSpeed * speedMultiplier,
                 gun.VelocityDecay,
                 gun.MinBulletSpeed,
-                gun.BulletScale
+                gun.BulletScale,
+                gun.CanBounce ? gun.MaxBounces : 0
             );
             lighting.AddFlash(muzzlePos, 40f, Color.White, 0.06f);
             lighting.AddFlash(muzzlePos, 30f, Color.Yellow, 0.10f);

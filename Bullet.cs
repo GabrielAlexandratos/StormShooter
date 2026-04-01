@@ -12,14 +12,16 @@ public class Bullet
     public float Decay;
     public float MinSpeed;
     public bool IsAlive = true;
+    public int BouncesRemaining;
 
-    public Bullet(Vector2 position, Vector2 velocity, float decay = 0f, float minSpeed = 0f, float scale = 1f)
+    public Bullet(Vector2 position, Vector2 velocity, float decay = 0f, float minSpeed = 0f, float scale = 1f, int bounces = 0)
     {
         Position = position;
         Velocity = velocity;
         Decay = decay;
         MinSpeed = minSpeed;
         Scale = scale;
+        BouncesRemaining = bounces;
     }
 
     // Checks if bullets are far enough away to safely despawn them

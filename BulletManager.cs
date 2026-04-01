@@ -8,10 +8,11 @@ namespace StormShooter;
 public class BulletManager
 {
     private readonly List<Bullet> _bullets = new();
+    
 
-    public void Spawn(Vector2 position, Vector2 velocity, float decay = 0f, float minSpeed = 0f, float scale = 1f)
+    public void Spawn(Vector2 position, Vector2 velocity, float decay = 0f, float minSpeed = 0f, float scale = 1f, int bounces = 0)
     {
-        _bullets.Add(new Bullet(position, velocity, decay, minSpeed, scale));
+        _bullets.Add(new Bullet(position, velocity, decay, minSpeed, scale, bounces));
     }
 
     public void Update(
@@ -25,7 +26,8 @@ public class BulletManager
         ref float shakeStrength,
         int virtualWidth,
         int virtualHeight,
-        Random random)
+        Random random,
+        Func<Vector2, bool> isWall)
     {
         float localShakeTime = shakeTime;
         float localShakeStrength = shakeStrength;
@@ -34,8 +36,36 @@ public class BulletManager
         {
             var b = _bullets[i];
             b.Update(dt);
+            Vector2 next = b.Position + b.Velocity * dt;
 
             if (!b.IsAlive) { _bullets.RemoveAt(i); continue; }
+
+            // Remove bullets on collision with walls
+            if (b.BouncesRemaining == 0 && isWall(next))
+            {
+                _bullets.RemoveAt(i);
+            }
+            
+            if (b.BouncesRemaining > 0)
+            {
+                bool hitX = isWall(new Vector2(next.X, b.Position.Y));
+                bool hitY = isWall(new Vector2(b.Position.X, next.Y));
+
+                if (hitX || hitY)
+                {
+                    if (hitX) b.Velocity.X = -b.Velocity.X;
+                    if (hitY) b.Velocity.Y = -b.Velocity.Y;
+
+                    // If the bullets hits the corner
+                    if (!hitX && !hitY && isWall(next))
+                    {
+                        b.Velocity.X = -b.Velocity.X;
+                        b.Velocity.Y = -b.Velocity.Y;
+                    }
+
+                    b.BouncesRemaining--;
+                }
+            }
 
             bool hit = false;
 

@@ -167,7 +167,8 @@ public class Game1 : Game
             ref _shakeStrength,
             VirtualWidth,
             VirtualHeight,
-            _random
+            _random,
+            IsWall
         );
         
         // Update particles
