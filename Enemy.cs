@@ -12,7 +12,7 @@ public class Enemy
     public Vector2 Velocity;
 
     public float Radius = 6f;
-    public float Health = 8f;
+    public float Health = 5f;
 
     private float _flashTime;
 
@@ -30,11 +30,16 @@ public class Enemy
         Velocity *= 0.9f;
     }
 
-    public void Hit(Vector2 force, float damage)
+    public void Hit(Vector2 force, float damage, float impact, Action<float, float> addShake)
     {
         Health -= damage;
         Velocity += force;
         _flashTime = 0.065f;
+
+        float shakeTime = 0.04f + impact * 0.0002f;
+        float shakeStrength = 1.5f + impact * 0.005f;
+
+        addShake?.Invoke(shakeTime, shakeStrength);
     }
     
     public bool IsDead() => Health <= 0;

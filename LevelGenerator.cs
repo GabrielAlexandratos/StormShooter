@@ -10,7 +10,10 @@ public class LevelGenerator
     private int _height;
     private Random _rng;
 
+    private const int TILE_SIZE = 10;
+
     public List<Room> Rooms { get; private set; } = new();
+    public List<SpawnPoint> SpawnPoints = new();
 
     public TileType[,] Generate(int width, int height, int seed = -1)
     {
@@ -39,6 +42,8 @@ public class LevelGenerator
         // Smoothing walls
         SmoothWalls(grid);
 
+        BuildSpawnPoints(grid);
+
         return grid;
     }
 
@@ -53,7 +58,7 @@ public class LevelGenerator
         var branch = BuildGuaranteedBranch(rooms);
         BuildRandomBranches(rooms);
         AddRandomConnections(rooms, branch);
-
+        
         return rooms;
     }
 
@@ -255,6 +260,33 @@ public class LevelGenerator
     {
         a.Connections.Add(b);
         b.Connections.Add(a);
+    }
+
+    private void BuildSpawnPoints(TileType[,] grid)
+    {
+        SpawnPoints.Clear();
+
+        for (int x = 1; x < _width - 1; x++)
+        for (int y = 1; y < _height - 1; y++)
+        {
+            if (grid[x, y] != TileType.Empty)
+                continue;
+
+            int walls = 0;
+            if (grid[x + 1, y] == TileType.Wall) walls++;
+            if (grid[x - 1, y] == TileType.Wall) walls++;
+            if (grid[x, y + 1] == TileType.Wall) walls++;
+            if (grid[x, y - 1] == TileType.Wall) walls++;
+
+            Vector2 worldPos = new Vector2(x * TILE_SIZE, y * TILE_SIZE);
+
+            if (walls == 1)
+                SpawnPoints.Add(new SpawnPoint(worldPos, SpawnType.Edge));
+            else if (walls >= 2)
+                SpawnPoints.Add(new SpawnPoint(worldPos, SpawnType.Group));
+            else if (_rng.NextDouble() < 0.02)
+                SpawnPoints.Add(new SpawnPoint(worldPos, SpawnType.Open));
+        }
     }
 
     private Vector2 Clamp(Vector2 pos)

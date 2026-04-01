@@ -4,37 +4,30 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace StormShooter;
 
+public enum EnemyType { Test, Basic }
+
 public class EnemyManager
 {
-    private readonly List<Enemy> _enemies = new();
+    public List<Enemy> Enemies { get; } = new();
 
-    public List<Enemy> Enemies => _enemies;
+    public void Add(Enemy enemy) => Enemies.Add(enemy);
 
-    public void Add(Enemy enemy)
-    {
-        _enemies.Add(enemy);
-    }
+    public void AddEnemy(Vector2 position, EnemyType type = EnemyType.Basic) => Enemies.Add(new Enemy(position));
 
     public void Update(float dt, LightingRenderer lighting)
     {
-        foreach (var e in _enemies)
+        foreach (var e in Enemies)
         {
             e.Update(dt);
-
-            // constant light
-            lighting.AddLight(new LightSource(
-                e.Position,
-                45f,
-                Color.White * 1.5f,
-                0.15f));
+            lighting.AddLight(new LightSource(e.Position, 45f, Color.White * 1.5f, 0.15f));
         }
 
-        _enemies.RemoveAll(e => e.IsDead());
+        Enemies.RemoveAll(e => e.IsDead());
     }
 
     public void Draw(SpriteBatch spriteBatch, Texture2D pixel)
     {
-        foreach (var e in _enemies)
+        foreach (var e in Enemies)
             e.Draw(spriteBatch, pixel);
     }
 }

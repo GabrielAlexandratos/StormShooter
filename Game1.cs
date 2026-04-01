@@ -25,13 +25,11 @@ public class Game1 : Game
     private Player _player;
 
     private Gun _currentGun;
-    private float _shotCooldown;
-
 
     private BulletManager _bulletManager;
-    private MouseState _previousMouse;
-
     private readonly Random _random = new();
+
+    private GunController _gunController;
 
     private float _shakeTime;
     private float _shakeStrength;
@@ -83,7 +81,7 @@ public class Game1 : Game
         _pixel = new Texture2D(GraphicsDevice, 1, 1);
         _pixel.SetData(new[] { Color.White });
 
-        _currentGun = GunData.Rifle;
+        _currentGun = GunData.BurstRifle;
         
         _lighting = new LightingRenderer(GraphicsDevice, VirtualWidth, VirtualHeight)
         {
@@ -96,14 +94,13 @@ public class Game1 : Game
         _bulletManager = new BulletManager();
         _enemyManager = new EnemyManager();
 
-        _enemyManager.Add(new Enemy(new Vector2(100, 100)));
-        _enemyManager.Add(new Enemy(new Vector2(200, 100)));
-        _enemyManager.Add(new Enemy(new Vector2(200, 200)));
+        _gunController = new GunController(_random);
 
         LevelGenerator generator = new LevelGenerator();
         _grid = new Tile[_gridWidth, _gridHeight];
 
         var generated = generator.Generate(_gridWidth, _gridHeight);
+        var rooms = generator.Rooms;
 
         for (int x = 0; x < _gridWidth; x++)
         for (int y = 0; y < _gridHeight; y++)
@@ -114,7 +111,9 @@ public class Game1 : Game
 
         Vector2 spawnPos = FindSpawnPosition();
         _player = new Player(spawnPos, Settings.PlayerSpeed, _pixel);
-        _enemyManager.Add(new Enemy(spawnPos + new Vector2(50, 50)));
+
+        var spawner = new EnemySpawner(_grid, _tileSize);
+        spawner.Spawn(rooms, _enemyManager, spawnPos);
 
     }
 
@@ -140,46 +139,22 @@ public class Game1 : Game
         // Update enemies
         _enemyManager.Update(dt, _lighting);
 
-        if (kb.IsKeyDown(Keys.D1)) _currentGun = GunData.Rifle;
+        if (kb.IsKeyDown(Keys.D1)) _currentGun = GunData.BurstRifle;
         if (kb.IsKeyDown(Keys.D2)) _currentGun = GunData.Smg;
         if (kb.IsKeyDown(Keys.D3)) _currentGun = GunData.Pistol;
+        if (kb.IsKeyDown(Keys.D4)) _currentGun = GunData.Shotgun;
 
-        bool canShoot = _shotCooldown <= 0f;
-        bool wantsToShoot =
-            _currentGun.Automatic
-                ? mouse.LeftButton == ButtonState.Pressed
-                : (mouse.LeftButton == ButtonState.Pressed &&
-                   _previousMouse.LeftButton == ButtonState.Released);
-
-        if (_shotCooldown > 0f) _shotCooldown -= dt;
-
-        if (wantsToShoot && canShoot)
-        {
-            // Get all the data needed for a bullet to shoot
-            Vector2 playerPos = _player.Position;
-            Vector2 gunPos = _player.GunPos;
-            float spread = _currentGun.Spread;
-            float angleOffset = ((float)_random.NextDouble() - 0.5f) * spread;
-            Vector2 direction = mouseWorld - playerPos;
-            if (direction.LengthSquared() > 0.0001f)
-                direction.Normalize();
-            float angle = (float)Math.Atan2(direction.Y, direction.X) + angleOffset;
-
-            Vector2 shootDir = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
-            Vector2 velocity = shootDir * _currentGun.BulletSpeed;
-            Vector2 muzzlePos = gunPos + shootDir * 8f;
-            _bulletManager.Spawn(muzzlePos, velocity);
-
-            // Setting up gun impact fx variables
-            _shakeTime = _currentGun.ShakeDuration;
-            _shakeStrength = _currentGun.ShakeStrength;
-            _player.ApplyRecoil(shootDir, _currentGun.Recoil * 1.3f, _random.NextSingle() * 0.12f);
-            _shotCooldown = 1f / _currentGun.FireRate;
-
-            // Muzzle flash: main layer light + colour glow
-            _lighting.AddFlash(muzzlePos, 40f, Color.White,  duration: 0.06f);
-            _lighting.AddFlash(muzzlePos, 30f, Color.Yellow, duration: 0.10f);
-        }
+        _gunController.Update(
+            dt,
+            mouse,
+            mouseWorld,
+            _player,
+            _currentGun,
+            _bulletManager,
+            _lighting,
+            ref _shakeTime,
+            ref _shakeStrength
+        );
 
         _bulletManager.Update(
             dt,
@@ -194,8 +169,6 @@ public class Game1 : Game
             VirtualHeight,
             _random
         );
-
-        _previousMouse = mouse;
         
         // Update particles
         _particles.Update(dt);
@@ -240,7 +213,7 @@ public class Game1 : Game
 
             Color color = _grid[x, y].Type switch
             {
-                TileType.Empty => Color.DarkGray * 0.4f,
+                TileType.Empty => Color.DarkGray * 0.75f,
                 
                 TileType.Wall => Color.DarkSlateGray,
                 TileType.Cover => Color.LightGray,
@@ -318,7 +291,8 @@ public class Game1 : Game
 
         return _grid[tx, ty].Type == TileType.Wall;
     }
-/*
+
+    /*
     Vector2 GetRandomDirection()
     {
         int r = _random.Next(4);
@@ -332,6 +306,7 @@ public class Game1 : Game
         };
     }
     */
+    
     Vector2 FindSpawnPosition()
     {
         for (int i = 0; i < 1000; i++)
@@ -347,5 +322,100 @@ public class Game1 : Game
         }
 
         return new Vector2(0, 0);
+    }
+}
+
+public class EnemySpawner
+{
+    private Tile[,] _grid;
+    private int _tileSize;
+
+    private Random _random = new Random();
+
+    public EnemySpawner(Tile[,] grid, int tileSize)
+    {
+        _grid = grid;
+        _tileSize = tileSize;
+    }
+
+    public void Spawn(List<Room> rooms, EnemyManager manager, Vector2 playerPos)
+    {
+        int clusterCount = Math.Min(rooms.Count, 4);
+
+        List<Room> candidates = new();
+
+        foreach (var room in rooms)
+        {
+            // only skip the exact starting area
+            if (Vector2.Distance(room.Position * _tileSize, playerPos) < 120f)
+                continue;
+
+            candidates.Add(room);
+        }
+
+        if (candidates.Count == 0)
+            candidates = new List<Room>(rooms);
+
+        for (int i = 0; i < clusterCount && candidates.Count > 0; i++)
+        {
+            int index = _random.Next(candidates.Count);
+            var room = candidates[index];
+
+            SpawnCluster(room, manager);
+            candidates.RemoveAt(index);
+        }
+    }
+
+    private void SpawnCluster(Room room, EnemyManager manager)
+    {
+        int count = _random.Next(2, 4);
+
+        int attempts = 0;
+        int spawned = 0;
+
+        while (spawned < count && attempts < count * 10)
+        {
+            attempts++;
+
+            // sample inside circle
+            float angle = (float)(_random.NextDouble() * Math.PI * 2);
+            float radius = (float)_random.NextDouble() * room.Radius;
+
+            Vector2 localOffset = new Vector2(
+                (float)Math.Cos(angle),
+                (float)Math.Sin(angle)
+            ) * radius * _tileSize;
+
+            Vector2 worldCenter = room.Position * _tileSize;
+            Vector2 pos = worldCenter + localOffset;
+
+            // convert to tile
+            int tx = (int)(pos.X / _tileSize);
+            int ty = (int)(pos.Y / _tileSize);
+
+            // bounds check
+            if (tx < 0 || ty < 0 || tx >= 200 || ty >= 200)
+                continue;
+
+            // ONLY spawn on empty tiles
+            if (_grid[tx, ty].Type == TileType.Empty && IsFarFromOthers(pos, manager))
+            {
+                manager.AddEnemy(pos, EnemyType.Basic);
+                spawned++;
+            }
+        }
+    }
+
+    private bool IsFarFromOthers(Vector2 pos, EnemyManager manager)
+    {
+        float minDist = 30f; // spacing between enemies
+
+        foreach (var e in manager.Enemies)
+        {
+            if (Vector2.Distance(e.Position, pos) < minDist)
+                return false;
+        }
+
+        return true;
     }
 }
