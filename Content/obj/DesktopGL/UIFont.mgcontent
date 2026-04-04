@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PipelineBuildEvent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <SourceFile>/Users/gabriel/RiderProjects/StormShooter/Content/UIFont.spritefont</SourceFile>
+  <SourceTime>2026-04-01T17:31:26.0808859+11:00</SourceTime>
+  <DestFile>/Users/gabriel/RiderProjects/StormShooter/Content/bin/DesktopGL/UIFont.xnb</DestFile>
+  <DestTime>2026-04-01T17:36:57.3778453+11:00</DestTime>
+  <Importer>FontDescriptionImporter</Importer>
+  <ImporterTime>2025-10-21T01:25:32+11:00</ImporterTime>
+  <Processor>FontDescriptionProcessor</Processor>
+  <ProcessorTime>2025-10-21T01:25:32+11:00</ProcessorTime>
+  <Parameters>
+    <Key>PremultiplyAlpha</Key>
+    <Value>True</Value>
+  </Parameters>
+  <Parameters>
+    <Key>TextureFormat</Key>
+    <Value>Compressed</Value>
+  </Parameters>
+  <Dependencies />
+  <BuildAsset />
+  <BuildOutput />
+</PipelineBuildEvent>

@@ -140,9 +140,7 @@ public class Game1 : Game
         _enemyManager.Update(dt, _lighting);
 
         if (kb.IsKeyDown(Keys.D1)) _currentGun = GunData.BurstRifle;
-        if (kb.IsKeyDown(Keys.D2)) _currentGun = GunData.Smg;
-        if (kb.IsKeyDown(Keys.D3)) _currentGun = GunData.Pistol;
-        if (kb.IsKeyDown(Keys.D4)) _currentGun = GunData.Shotgun;
+        if (kb.IsKeyDown(Keys.D2)) _currentGun = GunData.Shotgun;
 
         _gunController.Update(
             dt,
@@ -239,8 +237,6 @@ public class Game1 : Game
 
         _spriteBatch.End();
 
-        // Apply lights to the game world
-        // This darkens the pixels that are not in the light
         _spriteBatch.Begin(
             blendState: MultiplyBlend,
             samplerState: _pointSampler
@@ -292,21 +288,6 @@ public class Game1 : Game
 
         return _grid[tx, ty].Type == TileType.Wall;
     }
-
-    /*
-    Vector2 GetRandomDirection()
-    {
-        int r = _random.Next(4);
-
-        return r switch
-        {
-            0 => new Vector2(1, 0),
-            1 => new Vector2(-1, 0),
-            2 => new Vector2(0, 1),
-            _ => new Vector2(0, -1),
-        };
-    }
-    */
     
     Vector2 FindSpawnPosition()
     {
@@ -378,7 +359,6 @@ public class EnemySpawner
         {
             attempts++;
 
-            // sample inside circle
             float angle = (float)(_random.NextDouble() * Math.PI * 2);
             float radius = (float)_random.NextDouble() * room.Radius;
 
@@ -389,16 +369,13 @@ public class EnemySpawner
 
             Vector2 worldCenter = room.Position * _tileSize;
             Vector2 pos = worldCenter + localOffset;
-
-            // convert to tile
+            
             int tx = (int)(pos.X / _tileSize);
             int ty = (int)(pos.Y / _tileSize);
 
-            // bounds check
             if (tx < 0 || ty < 0 || tx >= 200 || ty >= 200)
                 continue;
 
-            // ONLY spawn on empty tiles
             if (_grid[tx, ty].Type == TileType.Empty && IsFarFromOthers(pos, manager))
             {
                 manager.AddEnemy(pos, EnemyType.Basic);
