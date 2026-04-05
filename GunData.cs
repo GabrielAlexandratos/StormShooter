@@ -39,7 +39,7 @@ public class GunData
         RecoilRecovery = 7f,
         
         CanBounce = true,
-        MaxBounces = 1,
+        MaxBounces = 3,
 
         HitStop = _hitStopTime
     };
