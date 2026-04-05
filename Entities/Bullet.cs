@@ -13,6 +13,7 @@ public class Bullet
     public float MinSpeed;
     public bool IsAlive = true;
     public int BouncesRemaining;
+    private float _timeActive = 0f;
 
     public Bullet(Vector2 position, Vector2 velocity, float decay = 0f, float minSpeed = 0f, float scale = 1f, int bounces = 0)
     {
@@ -28,34 +29,21 @@ public class Bullet
     public bool IsOffscreen(int width, int height) =>
         Position.X < -300 || Position.X > width + 300 ||
         Position.Y < -300 || Position.Y > height + 300;
-
-    public void Update(float deltaTime)
+    
+    public void Update(float dt)
     {
-        if (Decay > 0f)
+        _timeActive += dt;
+
+        float lifeProgress = Math.Clamp(_timeActive * Decay, 0f, 1f);
+        float speedFactor = 1.0f - lifeProgress;
+
+        Velocity *= MathF.Pow(0.98f, dt * 60f);
+        Position += (Velocity * speedFactor) * dt;
+
+        if (lifeProgress >= 1.0f || (Velocity * speedFactor).Length() < 1f)
         {
-            float speed = Velocity.Length();
-
-            if (speed > 0f)
-            {
-                // Slowing down the bullets as they travel
-                speed -= Decay * speed * deltaTime;
-
-                // Despawn if they are not moving 
-                if (speed <= 0f)
-                {
-                    IsAlive = false;
-                    return;
-                }
-
-                Velocity = Vector2.Normalize(Velocity) * speed;
-            }
-        }
-
-        Position += Velocity * deltaTime;
-
-        // Kill bullets that are below the minimum speed threshold
-        if (Velocity.LengthSquared() < 400f)
             IsAlive = false;
+        }
     }
 
     public void Draw(SpriteBatch spriteBatch, Texture2D texture)

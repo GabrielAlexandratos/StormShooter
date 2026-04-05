@@ -25,7 +25,8 @@ public class GunController
         BulletManager bulletManager,
         LightingRenderer lighting,
         ref float shakeTime,
-        ref float shakeStrength)
+        ref float shakeStrength,
+        ref Vector2 shakeOffset)
     {
         // Handle burst firing
         if (_isBursting)
@@ -33,7 +34,7 @@ public class GunController
             _burstTimer -= dt;
             if (_burstTimer <= 0f && _burstShotsRemaining > 0)
             {
-                Fire(player, gun, mouseWorld, bulletManager, lighting, ref shakeTime, ref shakeStrength);
+                Fire(player, gun, mouseWorld, bulletManager, lighting, ref shakeTime, ref shakeStrength, ref shakeOffset);
                 _burstTimer = gun.BurstDelay;
                 if (--_burstShotsRemaining <= 0) _isBursting = false;
             }
@@ -57,7 +58,7 @@ public class GunController
             }
             else
             {
-                Fire(player, gun, mouseWorld, bulletManager, lighting, ref shakeTime, ref shakeStrength);
+                Fire(player, gun, mouseWorld, bulletManager, lighting, ref shakeTime, ref shakeStrength, ref shakeOffset);
             }
 
             _shotCooldown = 1f / gun.FireRate;
@@ -73,7 +74,8 @@ public class GunController
         BulletManager bulletManager,
         LightingRenderer lighting,
         ref float shakeTime,
-        ref float shakeStrength)
+        ref float shakeStrength,
+        ref Vector2 shakeOffset)
     {
         Vector2 direction = mouseWorld - player.Position;
         if (direction.LengthSquared() > 0.0001f) direction.Normalize();
@@ -92,16 +94,18 @@ public class GunController
             Vector2 muzzlePos = player.GunPos + shootDir * 8f;
 
             float speedMultiplier = 1f;
+            float decayVariation = 0f;
 
             if (gun.UseSpeedVariation)
             {
                 speedMultiplier = 0.85f + _random.NextSingle() * 0.3f;
+                decayVariation = (_random.NextSingle() * 0.8f) - 0.4f;
             }
 
             bulletManager.Spawn(
                 muzzlePos,
                 shootDir * gun.BulletSpeed * speedMultiplier,
-                gun.VelocityDecay,
+                gun.VelocityDecay + decayVariation,
                 gun.MinBulletSpeed,
                 gun.BulletScale,
                 gun.CanBounce ? gun.MaxBounces : 0
@@ -110,8 +114,10 @@ public class GunController
             lighting.AddFlash(muzzlePos, 30f, Color.Yellow, 0.10f);
         }
 
+        shakeOffset += -direction * gun.ShakeStrength;
+        
         shakeTime = gun.ShakeDuration;
-        shakeStrength = gun.ShakeStrength;
+        // shakeStrength = gun.ShakeStrength; (old random screen shake when shooting)
         player.ApplyRecoil(direction, gun.Recoil * 1.3f, _random.NextSingle() * 0.12f);
     }
 }
