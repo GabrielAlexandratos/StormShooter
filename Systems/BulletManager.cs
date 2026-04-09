@@ -8,7 +8,8 @@ namespace StormShooter;
 public class BulletManager
 {
     private readonly List<Bullet> _bullets = new();
-    
+
+    private const int TileSize = Settings.TileSize;
 
     public void Spawn(Vector2 position, Vector2 velocity, float decay = 0f, float minSpeed = 0f, float scale = 1f, int bounces = 0)
     {
@@ -29,64 +30,80 @@ public class BulletManager
         Random random,
         Func<Vector2, bool> isWall)
     {
-        float localShakeTime = shakeTime;
-        float localShakeStrength = shakeStrength;
-
         for (int i = _bullets.Count - 1; i >= 0; i--)
         {
             var b = _bullets[i];
+            Vector2 frameStart = b.Position;
+
             b.Update(dt);
-            Vector2 next = b.Position + b.Velocity * dt;
 
-            if (!b.IsAlive) { _bullets.RemoveAt(i); continue; }
-
-            // Remove bullets on collision with walls
-            if (b.BouncesRemaining == 0 && isWall(next))
+            if (!b.IsAlive || b.IsOffscreen(virtualWidth * 20, virtualHeight * 20))
             {
                 _bullets.RemoveAt(i);
+                continue;
             }
-            
-            if (b.BouncesRemaining > 0)
+
+            // wall collision
+            HitResult hit = TraceRay(frameStart, b.Position, isWall);
+
+            if (hit.DidHit)
             {
-                bool hitX = isWall(new Vector2(next.X, b.Position.Y));
-                bool hitY = isWall(new Vector2(b.Position.X, next.Y));
-
-                if (hitX || hitY)
+                if (b.BouncesRemaining > 0)
                 {
-                    if (hitX) b.Velocity.X = -b.Velocity.X;
-                    if (hitY) b.Velocity.Y = -b.Velocity.Y;
-
-                    // If the bullets hits the corner
-                    if (!hitX && !hitY && isWall(next))
-                    {
-                        b.Velocity.X = -b.Velocity.X;
-                        b.Velocity.Y = -b.Velocity.Y;
-                    }
-
+                    b.Velocity = ReflectVelocity(b.Velocity, hit.Normal);
+                    b.Position = hit.SafePosition;
                     b.BouncesRemaining--;
+                }
+                else
+                {
+                    _bullets.RemoveAt(i);
+                    continue;
                 }
             }
 
-            bool hit = false;
+            _bullets[i] = b;
 
+            // Enemy collision
+            bool bulletHit = false;
             foreach (var e in enemies)
             {
-                if (Vector2.Distance(b.Position, e.Position) >= e.Radius + 4f * b.Scale)
+                // making sure that bullets hit enemies even if it just grazes them
+                float graze = b.Scale * 2.5f;
+                float combinedRadius = e.Radius + b.HitRadius + graze;
+
+                Vector2 travelDir = b.Position - frameStart;
+                float travelDist = travelDir.Length();
+                Vector2 adjustedTip = b.Position;
+
+                if (travelDist > 0.001f)
+                {
+                    adjustedTip -= (travelDir / travelDist) * (combinedRadius * 0.6f);
+                }
+
+                if (!SweptCircleHit(frameStart, adjustedTip, e.Position, combinedRadius))
                     continue;
 
-                Vector2 dir = Vector2.Normalize(b.Velocity);
+                // hit logic
+                Vector2 dir = b.Velocity.LengthSquared() > 0f
+                    ? Vector2.Normalize(b.Velocity)
+                    : Vector2.UnitX;
                 float impact = b.Velocity.Length();
+
+                float capturedShakeTime = 0;
+                float capturedShakeStrength = 0;
+
                 e.Hit(dir * 15f, currentGun.Damage, impact, (t, s) =>
                 {
-                    localShakeTime = MathF.Max(localShakeTime, t);
-                    localShakeStrength = MathF.Max(localShakeStrength, s);
-                });
+                    capturedShakeTime = t;
+                    capturedShakeStrength = s;
+                }, currentGun.ShakeStrength);
+
+                shakeTime = capturedShakeTime;
+                shakeStrength = capturedShakeStrength;
 
                 if (e.IsDead())
                 {
                     hitStopTime = currentGun.HitStop;
-                    shakeTime = 0.03f;
-                    shakeStrength = 0f;
 
                     for (int j = 0; j < 6; j++)
                     {
@@ -95,8 +112,13 @@ public class BulletManager
                         {
                             Position = e.Position,
                             Velocity = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * (150f + random.NextSingle() * 200f),
-                            Life = 0.25f, MaxLife = 0.35f, Size = 8f, Rotation = angle,
-                            Color = new Color(200, 40, 40), Drag = 4f, Gravity = 40f
+                            Life = 0.25f,
+                            MaxLife = 0.35f,
+                            Size = 8f,
+                            Rotation = angle,
+                            Color = new Color(200, 40, 40),
+                            Drag = 4f,
+                            Gravity = 40f
                         });
                     }
                 }
@@ -108,28 +130,155 @@ public class BulletManager
                     {
                         Position = e.Position,
                         Velocity = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * (180f + random.NextSingle() * 320f),
-                        Life = 0.2f, MaxLife = 0.3f, Size = 8f, Rotation = angle,
+                        Life = 0.2f,
+                        MaxLife = 0.3f,
+                        Size = 8f,
+                        Rotation = angle,
                         Color = j % 2 == 0 ? new Color(220, 30, 30) : new Color(255, 210, 80),
-                        Drag = 6f, Gravity = 60f
+                        Drag = 6f,
+                        Gravity = 60f
                     });
                 }
 
-                hit = true;
+                bulletHit = true;
                 break;
             }
 
-            if (hit || b.IsOffscreen(virtualWidth * 20, virtualHeight * 20))
+            if (bulletHit)
+            {
                 _bullets.RemoveAt(i);
+            }
             else
+            {
                 lighting.AddLight(new LightSource(b.Position, 20f, Color.White, 0.04f));
+            }
         }
-        shakeTime = localShakeTime;
-        shakeStrength = localShakeStrength;
     }
 
-    public void Draw(SpriteBatch spriteBatch, Texture2D pixel)
+    private static bool SweptCircleHit(Vector2 from, Vector2 to, Vector2 center, float radius)
+    {
+        Vector2 d = to - from;
+        Vector2 f = from - center;
+
+        float a = Vector2.Dot(d, d);
+        float b = 2f * Vector2.Dot(f, d);
+        float c = Vector2.Dot(f, f) - radius * radius;
+
+        if (a < 1e-10f)
+            return c <= 0f;
+
+        float discriminant = b * b - 4f * a * c;
+
+        if (discriminant < 0f)
+            return false;
+
+        float sqrtDisc = MathF.Sqrt(discriminant);
+        float t0 = (-b - sqrtDisc) / (2f * a);
+        float t1 = (-b + sqrtDisc) / (2f * a);
+
+        return t0 <= 1f && t1 >= 0f;
+    }
+
+    private struct HitResult
+    {
+        public bool DidHit;
+        public Vector2 SafePosition;
+        public Vector2 Normal;
+    }
+
+    private static HitResult TraceRay(Vector2 from, Vector2 to, Func<Vector2, bool> isWall)
+    {
+        float x0 = from.X / TileSize;
+        float y0 = from.Y / TileSize;
+        float x1 = to.X / TileSize;
+        float y1 = to.Y / TileSize;
+
+        int tileX = (int)MathF.Floor(x0);
+        int tileY = (int)MathF.Floor(y0);
+
+        int endTileX = (int)MathF.Floor(x1);
+        int endTileY = (int)MathF.Floor(y1);
+
+        float dx = x1 - x0;
+        float dy = y1 - y0;
+
+        int stepX = dx > 0 ? 1 : (dx < 0 ? -1 : 0);
+        int stepY = dy > 0 ? 1 : (dy < 0 ? -1 : 0);
+
+        float tDeltaX = MathF.Abs(dx) > 1e-6f ? MathF.Abs(1f / dx) : float.MaxValue;
+        float tDeltaY = MathF.Abs(dy) > 1e-6f ? MathF.Abs(1f / dy) : float.MaxValue;
+
+        float tMaxX = MathF.Abs(dx) > 1e-6f
+            ? (stepX > 0 ? (MathF.Floor(x0) + 1f - x0) : (x0 - MathF.Floor(x0))) * tDeltaX
+            : float.MaxValue;
+
+        float tMaxY = MathF.Abs(dy) > 1e-6f
+            ? (stepY > 0 ? (MathF.Floor(y0) + 1f - y0) : (y0 - MathF.Floor(y0))) * tDeltaY
+            : float.MaxValue;
+
+        bool crossedX = false;
+
+        while (true)
+        {
+            bool isStart = (tileX == (int)MathF.Floor(x0) && tileY == (int)MathF.Floor(y0));
+
+            if (!isStart)
+            {
+                Vector2 cellCenter = new Vector2(
+                    (tileX + 0.5f) * TileSize,
+                    (tileY + 0.5f) * TileSize);
+
+                if (isWall(cellCenter))
+                {
+                    Vector2 normal = crossedX
+                        ? new Vector2(-stepX, 0)
+                        : new Vector2(0, -stepY);
+
+                    float tHit = crossedX ? (tMaxX - tDeltaX) : (tMaxY - tDeltaY);
+                    tHit = Math.Clamp(tHit - 0.01f, 0f, 1f);
+
+                    Vector2 safePos = new Vector2(
+                        from.X + (to.X - from.X) * tHit,
+                        from.Y + (to.Y - from.Y) * tHit);
+
+                    return new HitResult
+                    {
+                        DidHit = true,
+                        SafePosition = safePos,
+                        Normal = normal
+                    };
+                }
+            }
+
+            if (tileX == endTileX && tileY == endTileY)
+                break;
+
+            if (tMaxX < tMaxY)
+            {
+                tMaxX += tDeltaX;
+                tileX += stepX;
+                crossedX = true;
+            }
+            else
+            {
+                tMaxY += tDeltaY;
+                tileY += stepY;
+                crossedX = false;
+            }
+        }
+
+        return new HitResult { DidHit = false };
+    }
+
+    private static Vector2 ReflectVelocity(Vector2 velocity, Vector2 normal)
+    {
+        float dot = Vector2.Dot(velocity, normal);
+        return velocity - 2f * dot * normal;
+    }
+
+    public void Draw(SpriteBatch spriteBatch, Texture2D texture)
     {
         foreach (var b in _bullets)
-            b.Draw(spriteBatch, pixel);
+            b.Draw(spriteBatch, texture);
     }
 }

@@ -1,2 +1,5 @@
 Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
-"/Users/gabriel/RiderProjects/StormShooter/Content/UIFont.spritefont","/Users/gabriel/RiderProjects/StormShooter/Content/bin/DesktopGL/UIFont.xnb","FontDescriptionProcessor","SpriteFontContent",473,37913,0.088524
+"/Users/gabriel/RiderProjects/StormShooter/Content/bullet.png","/Users/gabriel/RiderProjects/StormShooter/Content/bin/DesktopGL/bullet.xnb","TextureProcessor","Texture2DContent",171,445,0.051271
+"/Users/gabriel/RiderProjects/StormShooter/Content/crosshair.png","/Users/gabriel/RiderProjects/StormShooter/Content/bin/DesktopGL/crosshair.xnb","TextureProcessor","Texture2DContent",125,569,0.000991
+"/Users/gabriel/RiderProjects/StormShooter/Content/gun_shotgun.png","/Users/gabriel/RiderProjects/StormShooter/Content/bin/DesktopGL/gun_shotgun.xnb","TextureProcessor","Texture2DContent",286,769,0.000602
+"/Users/gabriel/RiderProjects/StormShooter/Content/gun_smg.png","/Users/gabriel/RiderProjects/StormShooter/Content/bin/DesktopGL/gun_smg.xnb","TextureProcessor","Texture2DContent",308,805,0.000356

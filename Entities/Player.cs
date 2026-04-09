@@ -64,9 +64,43 @@ public class Player
         _recoilRotation = randomRotation;
     }
 
-    public void Draw(SpriteBatch spriteBatch)
+    public void Draw(SpriteBatch spriteBatch, Texture2D gunTexture, Gun gun)
     {
-        spriteBatch.Draw(_pixel, Position, null, Color.White, 0f, new Vector2(0.5f, 0.5f), new Vector2(10, 10), SpriteEffects.None, 0f);
-        spriteBatch.Draw(_pixel, _gunPos, null, Color.Red, _finalRotation, new Vector2(0f, 0.5f), new Vector2(12, 4), _gunFlip ? SpriteEffects.FlipVertically : SpriteEffects.None, 0f);
+        Vector2 drawPos = new Vector2(MathF.Round(Position.X), MathF.Round(Position.Y));
+        Vector2 gunDrawPos = new Vector2(MathF.Round(_gunPos.X), MathF.Round(_gunPos.Y));
+
+        if (gunTexture.Width == 1 && gunTexture.Height == 1)
+        {
+            spriteBatch.Draw(gunTexture, gunDrawPos, null, Color.Red, _finalRotation,
+                new Vector2(0f, 0.5f), new Vector2(12, 4),
+                _gunFlip ? SpriteEffects.FlipVertically : SpriteEffects.None, 0f);
+        }
+        else
+        {
+            Vector2 drawOrigin = gun.SpriteOrigin;
+            if (_gunFlip)
+                drawOrigin.Y = gunTexture.Height - gun.SpriteOrigin.Y;
+
+            spriteBatch.Draw(gunTexture, gunDrawPos, null, Color.White, _finalRotation,
+                drawOrigin, gun.SpriteScale,
+                _gunFlip ? SpriteEffects.FlipVertically : SpriteEffects.None, 0f);
+        }
+        
+        spriteBatch.Draw(_pixel, drawPos, null, Color.White, 0f, new Vector2(0.5f, 0.5f), new Vector2(10, 10), SpriteEffects.None, 0f);
+   }
+    
+    public Vector2 GetMuzzleWorld(Gun gun)
+    {
+        Vector2 muzzleOffset = gun.MuzzleOffset;
+        if (_gunFlip)
+            muzzleOffset.Y = -muzzleOffset.Y;
+
+        float cos = MathF.Cos(_gunRotation);
+        float sin = MathF.Sin(_gunRotation);
+        Vector2 rotated = new Vector2(
+            muzzleOffset.X * cos - muzzleOffset.Y * sin,
+            muzzleOffset.X * sin + muzzleOffset.Y * cos
+        );
+        return _gunPos + rotated;
     }
 }

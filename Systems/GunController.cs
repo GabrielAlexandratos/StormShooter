@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -9,16 +10,25 @@ public class GunController
     private float _shotCooldown;
     private MouseState _previousMouse;
     private readonly Random _random;
-    
+
     private int _burstShotsRemaining;
     private float _burstTimer;
     private bool _isBursting;
+
+    //ammo
+    private readonly Dictionary<Gun, int> _ammoPool = new();
+    private float _reloadTimer;
+    public int GetCurrentAmmo(Gun gun) => _ammoPool.GetValueOrDefault(gun, (int)gun.MagSize);
+
+    public float ReloadProgress => _reloadTimer;
+    public bool IsReloading => _reloadTimer > 0f;
 
     public GunController(Random random) => _random = random;
 
     public void Update(
         float dt,
         MouseState mouse,
+        KeyboardState kb,
         Vector2 mouseWorld,
         Player player,
         Gun gun,
@@ -28,6 +38,24 @@ public class GunController
         ref float shakeStrength,
         ref Vector2 shakeOffset)
     {
+        if (!_ammoPool.ContainsKey(gun))
+            _ammoPool[gun] = (int)gun.MagSize;
+
+        if (_reloadTimer > 0f)
+        {
+            _reloadTimer -= dt;
+            if (_reloadTimer <= 0f)
+                _ammoPool[gun] = (int)gun.MagSize;
+
+            return;
+        }
+
+        if (kb.IsKeyDown(Keys.R) && _ammoPool[gun] < gun.MagSize)
+        {
+            _reloadTimer = gun.ReloadTime;
+            return;
+        }
+
         // Handle burst firing
         if (_isBursting)
         {
@@ -50,18 +78,21 @@ public class GunController
         //Check if the player can is not allready shooting or in a cooldown
         if (wantsToShoot && _shotCooldown <= 0f && !_isBursting)
         {
-            if (gun.BurstCount > 1)
+            if (_ammoPool[gun] > 0)
             {
-                _isBursting = true;
-                _burstShotsRemaining = gun.BurstCount;
-                _burstTimer = 0f;
-            }
-            else
-            {
-                Fire(player, gun, mouseWorld, bulletManager, lighting, ref shakeTime, ref shakeStrength, ref shakeOffset);
-            }
+                if (gun.BurstCount > 1)
+                {
+                    _isBursting = true;
+                    _burstShotsRemaining = gun.BurstCount;
+                    _burstTimer = 0f;
+                }
+                else
+                {
+                    Fire(player, gun, mouseWorld, bulletManager, lighting, ref shakeTime, ref shakeStrength, ref shakeOffset);
+                }
 
-            _shotCooldown = 1f / gun.FireRate;
+                _shotCooldown = 1f / gun.FireRate;
+            }
         }
 
         _previousMouse = mouse;
@@ -77,6 +108,8 @@ public class GunController
         ref float shakeStrength,
         ref Vector2 shakeOffset)
     {
+        _ammoPool[gun]--;
+
         Vector2 direction = mouseWorld - player.Position;
         if (direction.LengthSquared() > 0.0001f) direction.Normalize();
 
@@ -91,7 +124,7 @@ public class GunController
                 + (_random.NextSingle() - 0.5f) * gun.SpreadAngle;
 
             Vector2 shootDir = new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
-            Vector2 muzzlePos = player.GunPos + shootDir * 8f;
+            Vector2 muzzlePos = player.GetMuzzleWorld(gun);
 
             float speedMultiplier = 1f;
             float decayVariation = 0f;
@@ -114,10 +147,16 @@ public class GunController
             lighting.AddFlash(muzzlePos, 30f, Color.Yellow, 0.10f);
         }
 
-        shakeOffset += -direction * gun.ShakeStrength;
-        
+        shakeOffset += -direction * gun.kickBack;
+
         shakeTime = gun.ShakeDuration;
+        shakeStrength = 0f;
         // shakeStrength = gun.ShakeStrength; (old random screen shake when shooting)
-        player.ApplyRecoil(direction, gun.Recoil * 1.3f, _random.NextSingle() * 0.12f);
+        player.ApplyRecoil(direction, 10, _random.NextSingle() * 0.12f);
+    }
+
+    public void CancelReload()
+    {
+        _reloadTimer = 0f;
     }
 }

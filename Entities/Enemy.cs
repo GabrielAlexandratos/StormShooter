@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
 namespace StormShooter;
 
@@ -20,28 +18,27 @@ public class Enemy
     {
         Position = position;
     }
-    
-    public void Update(float deltaTime) {
+
+    public void Update(float deltaTime)
+    {
         Position += Velocity * deltaTime;
-        
-        if(_flashTime > 0)
+
+        if (_flashTime > 0)
             _flashTime -= deltaTime;
-        
+
         Velocity *= 0.9f;
     }
 
-    public void Hit(Vector2 force, float damage, float impact, Action<float, float> addShake)
+    public void Hit(Vector2 force, float damage, float impact, Action<float, float> addShake, float shakeStrength)
     {
         Health -= damage;
         Velocity += force;
         _flashTime = 0.065f;
 
-        float shakeTime = 0.04f + impact * 0.0002f;
-        float shakeStrength = 1.5f + impact * 0.005f;
-
+        float shakeTime = Settings.EnemyHitShakeDuration;
         addShake?.Invoke(shakeTime, shakeStrength);
     }
-    
+
     public bool IsDead() => Health <= 0;
 
     public void Draw(SpriteBatch spriteBatch, Texture2D pixel)

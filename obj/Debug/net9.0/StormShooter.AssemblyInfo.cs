@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("StormShooter")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bea42b015ef4e178ba7ca4545fc0dc2047c2c876")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2d95f1b6711d81334ecc30b67e8bcd6c6f0b380d")]
 [assembly: System.Reflection.AssemblyProductAttribute("StormShooter")]
 [assembly: System.Reflection.AssemblyTitleAttribute("StormShooter")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
