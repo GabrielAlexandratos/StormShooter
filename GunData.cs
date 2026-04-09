@@ -103,7 +103,7 @@ public class GunData
         MuzzleOffset = new Vector2(15f, -1f), // positioning the fire point
 
         Damage = 1.5f,
-        MagSize = 12f,
+        MagSize = 15f,
         ReloadTime = 1.8f,
 
         FireRate = 10f,

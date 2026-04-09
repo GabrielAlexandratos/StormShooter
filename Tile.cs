@@ -10,4 +10,5 @@ public enum TileType
 public struct Tile
 { 
     public TileType Type;
+    public int Variant;
 }

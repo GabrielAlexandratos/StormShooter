@@ -1,26 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "/Users/gabriel/RiderProjects/StormShooter/StormShooter.csproj": {}
+    "C:\\Users\\User\\Documents\\StormShooter\\StormShooter.csproj": {}
   },
   "projects": {
-    "/Users/gabriel/RiderProjects/StormShooter/StormShooter.csproj": {
+    "C:\\Users\\User\\Documents\\StormShooter\\StormShooter.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/gabriel/RiderProjects/StormShooter/StormShooter.csproj",
+        "projectUniqueName": "C:\\Users\\User\\Documents\\StormShooter\\StormShooter.csproj",
         "projectName": "StormShooter",
-        "projectPath": "/Users/gabriel/RiderProjects/StormShooter/StormShooter.csproj",
-        "packagesPath": "/Users/gabriel/.nuget/packages/",
-        "outputPath": "/Users/gabriel/RiderProjects/StormShooter/obj/",
+        "projectPath": "C:\\Users\\User\\Documents\\StormShooter\\StormShooter.csproj",
+        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\User\\Documents\\StormShooter\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/Users/gabriel/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
-          "/opt/homebrew/Cellar/dotnet/10.0.105/libexec/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -39,7 +38,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net9.0": {
@@ -71,11 +70,15 @@
               "version": "[9.0.14, 9.0.14]"
             },
             {
-              "name": "Microsoft.NETCore.App.Host.osx-arm64",
+              "name": "Microsoft.NETCore.App.Host.win-x64",
               "version": "[9.0.14, 9.0.14]"
             },
             {
               "name": "Microsoft.NETCore.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
               "version": "[9.0.14, 9.0.14]"
             }
           ],
@@ -84,7 +87,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/opt/homebrew/Cellar/dotnet/10.0.105/libexec/sdk/10.0.105/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

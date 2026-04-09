@@ -4,12 +4,18 @@
   <Platform>DesktopGL</Platform>
   <Config />
   <SourceFiles>
-    <File>/Users/gabriel/RiderProjects/StormShooter/Content/bullet.png</File>
-    <File>/Users/gabriel/RiderProjects/StormShooter/Content/crosshair.png</File>
-    <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_shotgun.png</File>
-    <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_smg.png</File>
+    <File>C:/Users/User/Documents/StormShooter/Content/bullet.png</File>
+    <File>C:/Users/User/Documents/StormShooter/Content/crosshair.png</File>
+    <File>C:/Users/User/Documents/StormShooter/Content/gun_shotgun.png</File>
+    <File>C:/Users/User/Documents/StormShooter/Content/gun_smg.png</File>
+    <File>C:/Users/User/Documents/StormShooter/Content/snow_floor_0.png</File>
+    <File>C:/Users/User/Documents/StormShooter/Content/snow_floor_1.png</File>
+    <File>C:/Users/User/Documents/StormShooter/Content/snow_floor_2.png</File>
   </SourceFiles>
   <DestFiles>
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />

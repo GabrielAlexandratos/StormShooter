@@ -42,9 +42,10 @@ public class Game1 : Game
     private Tile[,] _grid;
     private int _gridWidth = 200;
     private int _gridHeight = 200;
-    private int _tileSize = 10;
+    private int _tileSize = 16;
 
     private Dictionary<string, Texture2D> _gunTextures = new();
+    private Dictionary<TileType, Texture2D[]> _tileTextures = new();
 
     private static readonly BlendState MultiplyBlend = new BlendState
     {
@@ -92,6 +93,14 @@ public class Game1 : Game
         _gunTextures["gun_smg"] = Content.Load<Texture2D>("gun_smg");
         _gunTextures["gun_shotgun"] = Content.Load<Texture2D>("gun_shotgun");
 
+        _tileTextures[TileType.Empty] = new[]
+        {
+          Content.Load<Texture2D>("snow_floor_0"),
+          Content.Load<Texture2D>("snow_floor_1"),
+          Content.Load<Texture2D>("snow_floor_2"),
+        };
+//        _tileTextures["snow_wallmid"] = Content.Load<Texture2D>("snow_wallmid");
+
         _currentGun = GunData.MachineGun;
 
         _lighting = new LightingRenderer(GraphicsDevice, VirtualWidth, VirtualHeight)
@@ -114,7 +123,11 @@ public class Game1 : Game
         for (int x = 0; x < _gridWidth; x++)
             for (int y = 0; y < _gridHeight; y++)
             {
-                _grid[x, y] = new Tile { Type = generated[x, y] };
+                _grid[x, y] = new Tile
+                {
+                    Type = generated[x, y],
+                    Variant = _random.Next(0, 3)
+                };
             }
 
         Vector2 spawnPos = FindSpawnPosition();
@@ -124,7 +137,7 @@ public class Game1 : Game
         var spawner = new EnemySpawner(_grid, _tileSize);
         spawner.Spawn(rooms, _enemyManager, spawnPos);
 
-        // Start camera on player
+        // Start caera on player
         _cameraPos = spawnPos - new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
     }
 
@@ -235,14 +248,14 @@ public class Game1 : Game
             for (int y = 0; y < _gridHeight; y++)
             {
                 Vector2 pos = new Vector2(x * _tileSize, y * _tileSize);
-                Color color = _grid[x, y].Type switch
+
+                var tile = _grid[x, y];
+                if (_tileTextures.TryGetValue(tile.Type, out Texture2D[] textures))
                 {
-                    TileType.Empty => Color.DarkGray * 0.75f,
-                    TileType.Wall => Color.DarkSlateGray,
-                    TileType.Cover => Color.LightGray,
-                    _ => Color.Magenta
-                };
-                _spriteBatch.Draw(_pixel, pos, null, color, 0f, Vector2.Zero, new Vector2(_tileSize, _tileSize), SpriteEffects.None, 0f);
+                  var tex = textures[tile.Variant % textures.Length];
+                  _spriteBatch.Draw(tex, pos, Color.White);
+                }
+
             }
         }
 

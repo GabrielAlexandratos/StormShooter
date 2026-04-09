@@ -10,7 +10,7 @@ public class LevelGenerator
     private int _height;
     private Random _rng;
 
-    private const int TILE_SIZE = 10;
+    private const int TILE_SIZE = 16;
 
     public List<Room> Rooms { get; private set; } = new();
     public List<SpawnPoint> SpawnPoints = new();
