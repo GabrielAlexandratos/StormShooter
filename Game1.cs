@@ -40,8 +40,8 @@ public class Game1 : Game
 
     // Tiles
     private Tile[,] _grid;
-    private int _gridWidth = 200;
-    private int _gridHeight = 200;
+    private int _gridWidth = 120;
+    private int _gridHeight = 120;
     private int _tileSize = 16;
 
     private Dictionary<string, Texture2D> _gunTextures = new();

@@ -69,7 +69,7 @@ public class LevelGenerator
         int straightCount = 0;
 
         // Main path
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < 4; i++)
         {
             var next = CreateRoomNear(current);
             Connect(current, next);
@@ -98,13 +98,13 @@ public class LevelGenerator
         var current = rooms[originIndex];
         float dirY = _rng.Next(2) == 0 ? 1f : -1f;
 
-        int length = _rng.Next(3, 5);
+        int length = _rng.Next(2, 3);
         for (int i = 0; i < length; i++)
         {
             var offset = new Vector2(_rng.Next(6, 10), dirY * _rng.Next(8, 14));
             var pos = Clamp(current.Position + offset);
 
-            var next = new Room { Position = pos, Radius = _rng.Next(4, 6) };
+            var next = new Room { Position = pos, Radius = _rng.Next(1, 3) };
             Connect(current, next);
             rooms.Add(next);
             branch.Add(next);
@@ -142,7 +142,7 @@ public class LevelGenerator
         // Connect rooms that are not adjacent
         for (int i = 0; i < rooms.Count; i++)
         {
-            if (_rng.NextDouble() >= 0.25) continue;
+            if (_rng.NextDouble() >= 0.15) continue;
 
             var a = rooms[i];
             var b = rooms[_rng.Next(rooms.Count)];
@@ -178,7 +178,7 @@ public class LevelGenerator
                     grid[x, y] = TileType.Wall;
 
                 // Fill small wall holes
-                if (copy[x, y] == TileType.Wall && directEmpty >= 3)
+                if (copy[x, y] == TileType.Wall && directEmpty >= 4)
                     grid[x, y] = TileType.Empty;
             }
         }
@@ -201,13 +201,13 @@ public class LevelGenerator
         if (other.Connections.Count > 2)
         {
             // adding slight variation
-            offset = new Vector2(_rng.Next(-12, 12), _rng.Next(-12, 12));
+            offset = new Vector2(_rng.Next(-8, 8), _rng.Next(-12, 12));
             if (offset.Length() < 6) offset *= 2; // No tiny offsets
         }
         else
         {
             // Main path stays going in one direction
-            offset = new Vector2(_rng.Next(10, 18), _rng.Next(-8, 8));
+            offset = new Vector2(_rng.Next(7, 12), _rng.Next(-6, 6));
         }
 
         return new Room
@@ -248,9 +248,9 @@ public class LevelGenerator
 
             if (InBounds(gx, gy))     grid[gx, gy]         = TileType.Empty;
             if (InBounds(gx + 1, gy)) grid[gx + 1, gy]     = TileType.Empty;
-            if (InBounds(gx - 1, gy)) grid[gx - 1, gy]     = TileType.Empty;
+            //if (InBounds(gx - 1, gy)) grid[gx - 1, gy]     = TileType.Empty;
             if (InBounds(gx, gy + 1)) grid[gx, gy + 1]     = TileType.Empty;
-            if (InBounds(gx, gy - 1)) grid[gx, gy - 1]     = TileType.Empty;
+            //if (InBounds(gx, gy - 1)) grid[gx, gy - 1]     = TileType.Empty;
 
             pos += dir;
         }

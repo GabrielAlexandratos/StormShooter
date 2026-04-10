@@ -4,17 +4,17 @@
   <Platform>DesktopGL</Platform>
   <Config />
   <SourceFiles>
-    <File>C:/Users/User/Documents/StormShooter/Content/bullet.png</File>
-    <File>C:/Users/User/Documents/StormShooter/Content/crosshair.png</File>
-    <File>C:/Users/User/Documents/StormShooter/Content/gun_asval.png</File>
-    <File>C:/Users/User/Documents/StormShooter/Content/gun_scraprifle.png</File>
-    <File>C:/Users/User/Documents/StormShooter/Content/gun_shotgun.png</File>
-    <File>C:/Users/User/Documents/StormShooter/Content/gun_smg.png</File>
-    <File>C:/Users/User/Documents/StormShooter/Content/snow_floor_0.png</File>
-    <File>C:/Users/User/Documents/StormShooter/Content/snow_floor_1.png</File>
-    <File>C:/Users/User/Documents/StormShooter/Content/snow_floor_2.png</File>
-    <File>C:/Users/User/Documents/StormShooter/Content/snow_wall_0.png</File>
-    <File>C:/Users/User/Documents/StormShooter/Content/snow_wall_1.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/bullet.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/crosshair.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_asval.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_scraprifle.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_shotgun.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_smg.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/snow_floor_0.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/snow_floor_1.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/snow_floor_2.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/snow_wall_0.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/snow_wall_1.png</File>
   </SourceFiles>
   <DestFiles>
     <File xsi:nil="true" />

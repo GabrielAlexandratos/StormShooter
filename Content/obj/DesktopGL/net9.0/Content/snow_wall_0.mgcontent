@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PipelineBuildEvent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <SourceFile>C:/Users/User/Documents/StormShooter/Content/snow_wall_0.png</SourceFile>
-  <SourceTime>2026-04-10T16:29:10.8201703+10:00</SourceTime>
-  <DestFile>C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/Content/snow_wall_0.xnb</DestFile>
-  <DestTime>2026-04-10T16:52:21.0342091+10:00</DestTime>
+  <SourceFile>/Users/gabriel/RiderProjects/StormShooter/Content/snow_wall_0.png</SourceFile>
+  <SourceTime>2026-04-09T23:53:29.1330176+10:00</SourceTime>
+  <DestFile>/Users/gabriel/RiderProjects/StormShooter/Content/bin/DesktopGL/Content/snow_wall_0.xnb</DestFile>
+  <DestTime>2026-04-10T23:37:56.7839893+10:00</DestTime>
   <Importer>TextureImporter</Importer>
   <ImporterTime>2025-10-21T01:25:32+11:00</ImporterTime>
   <Processor>TextureProcessor</Processor>
