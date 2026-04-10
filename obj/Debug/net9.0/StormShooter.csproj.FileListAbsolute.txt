@@ -126,3 +126,4 @@ C:\Users\User\Documents\StormShooter\obj\Debug\net9.0\StormSho.940E1D34.Up2Date
 C:\Users\User\Documents\StormShooter\obj\Debug\net9.0\StormShooter.genruntimeconfig.cache
 C:\Users\User\Documents\StormShooter\obj\Debug\net9.0\ref\StormShooter.dll
 C:\Users\User\Documents\StormShooter\bin\Debug\net9.0\Content\gun_asval.xnb
+C:\Users\User\Documents\StormShooter\bin\Debug\net9.0\Content\gun_scraprifle.xnb

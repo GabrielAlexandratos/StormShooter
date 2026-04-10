@@ -37,13 +37,13 @@ public class GunData
     public static Gun VAL = new Gun
     {
         SpriteName = "gun_asval",
-        Damage = 1f,
-        MagSize = 17f,
+        Damage = 2f,
+        MagSize = 13f,
         ReloadTime = 1.5f,
 
-        FireRate = 15f,
+        FireRate = 17f,
         BulletSpeed = 1100f,
-        VelocityDecay = 2.1f,
+        VelocityDecay = 2f,
         MinBulletSpeed = 50f,
 
         Automatic = true,
@@ -52,7 +52,7 @@ public class GunData
         kickBack = 2f,
 
         BulletsPerShot = 1,
-        SpreadAngle = 0.255f,
+        SpreadAngle = 0.31f,
 
         BurstCount = 0,
         BurstDelay = 0f,
@@ -61,7 +61,7 @@ public class GunData
         RecoilRecovery = 7f,
 
         CanBounce = true,
-        MaxBounces = 1,
+        MaxBounces = 10,
     };
 
     public static Gun Pistol = new Gun
@@ -121,12 +121,12 @@ public class GunData
         RecoilRecovery = 7f,
 
         CanBounce = true,
-        MaxBounces = 3,
+        MaxBounces = 10,
     };
 
     public static Gun ScrapRifle = new Gun
     {
-        SpriteName = "gun_smg",
+        SpriteName = "gun_scraprifle",
 
         SpriteOrigin = new Vector2(1f, 4f),
         MuzzleOffset = new Vector2(15f, -1f),
@@ -136,9 +136,9 @@ public class GunData
         ReloadTime = 1.8f,
 
         FireRate = 8f,
-        SpreadAngle = 0.43f,
-        BulletSpeed = 950f,
-        VelocityDecay = 2.5f,
+        SpreadAngle = 0.38f,
+        BulletSpeed = 975f,
+        VelocityDecay = 2.3f,
         MinBulletSpeed = 50f,
 
         Automatic = true,
@@ -154,7 +154,7 @@ public class GunData
         RecoilRecovery = 8f,
 
         CanBounce = true,
-        MaxBounces = 3
+        MaxBounces = 10
     };
 
     public static Gun LongGun = new Gun

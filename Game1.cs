@@ -97,7 +97,7 @@ public class Game1 : Game
         _crosshairTexture = Content.Load<Texture2D>("crosshair");
         _bulletTexture = Content.Load<Texture2D>("bullet");
 
-        _gunTextures["gun_smg"] = Content.Load<Texture2D>("gun_smg");
+        _gunTextures["gun_scraprifle"] = Content.Load<Texture2D>("gun_scraprifle");
         _gunTextures["gun_shotgun"] = Content.Load<Texture2D>("gun_shotgun");
         _gunTextures["gun_asval"] = Content.Load<Texture2D>("gun_asval");
 
@@ -110,11 +110,11 @@ public class Game1 : Game
 
         _tileTextures[TileType.Wall] = new[]
         {
-        Content.Load<Texture2D>("snow_wall_0"),
-        Content.Load<Texture2D>("snow_wall_1"),
-    };
+            Content.Load<Texture2D>("snow_wall_0"),
+            Content.Load<Texture2D>("snow_wall_1"),
+        };
 
-        _currentGun = GunData.AssaultRifle;
+        _currentGun = GunData.ScrapRifle;
 
         _lighting = new LightingRenderer(GraphicsDevice, VirtualWidth, VirtualHeight)
         {
