@@ -27,7 +27,7 @@ public class Particle
         float lifeRatio = Life / MaxLife;
         float dragFactor = MathHelper.Max(0f, 1f - Drag * deltaTime);
         Velocity *= dragFactor * (0.85f + 0.15f * lifeRatio);
-
+        
         Velocity.Y += Gravity * deltaTime;
 
         Position += Velocity * deltaTime;

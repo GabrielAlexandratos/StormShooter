@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework;
 
 public class GunData
 {
-    public static Gun MachineGun = new Gun
+    public static Gun AssaultRifle = new Gun
     {
         Damage = 1f,
         MagSize = 11f,
@@ -12,8 +12,8 @@ public class GunData
 
         FireRate = 4f,
 
-        BulletSpeed = 950f,
-        VelocityDecay = 1.55f,
+        BulletSpeed = 1000f,
+        VelocityDecay = 1f,
         MinBulletSpeed = 50f,
 
         Automatic = true,
@@ -32,6 +32,10 @@ public class GunData
 
         CanBounce = false,
         MaxBounces = 0,
+    };
+
+    public static Gun VAL = new Gun
+    {
 
     };
 
@@ -100,7 +104,7 @@ public class GunData
         SpriteName = "gun_smg",
 
         SpriteOrigin = new Vector2(1f, 4f),
-        MuzzleOffset = new Vector2(15f, -1f), // positioning the fire point
+        MuzzleOffset = new Vector2(15f, -1f),
 
         Damage = 1.5f,
         MagSize = 15f,
@@ -109,7 +113,7 @@ public class GunData
         FireRate = 10f,
         SpreadAngle = 0.43f,
         BulletSpeed = 950f,
-        VelocityDecay = 3f,
+        VelocityDecay = 2.5f,
         MinBulletSpeed = 50f,
 
         Automatic = true,
