@@ -2,7 +2,7 @@ Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Siz
 "C:/Users/User/Documents/StormShooter/Content/bullet.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/Content/bullet.xnb","TextureProcessor","Texture2DContent",171,445,0.1845698
 "C:/Users/User/Documents/StormShooter/Content/crosshair.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/Content/crosshair.xnb","TextureProcessor","Texture2DContent",125,569,0.0026073
 "C:/Users/User/Documents/StormShooter/Content/gun_asval.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/Content/gun_asval.xnb","TextureProcessor","Texture2DContent",308,1005,0.0613945
-"C:/Users/User/Documents/StormShooter/Content/gun_scraprifle.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/Content/gun_scraprifle.xnb","TextureProcessor","Texture2DContent",327,913,0.0645723
+"C:/Users/User/Documents/StormShooter/Content/gun_scraprifle.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/Content/gun_scraprifle.xnb","TextureProcessor","Texture2DContent",328,1085,0.0618042
 "C:/Users/User/Documents/StormShooter/Content/gun_shotgun.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/Content/gun_shotgun.xnb","TextureProcessor","Texture2DContent",286,769,0.001158
 "C:/Users/User/Documents/StormShooter/Content/gun_smg.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/Content/gun_smg.xnb","TextureProcessor","Texture2DContent",308,805,0.0007261
 "C:/Users/User/Documents/StormShooter/Content/snow_floor_0.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/Content/snow_floor_0.xnb","TextureProcessor","Texture2DContent",142,1109,0.0020745

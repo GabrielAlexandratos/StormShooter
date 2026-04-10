@@ -37,13 +37,13 @@ public class GunData
     public static Gun VAL = new Gun
     {
         SpriteName = "gun_asval",
-        Damage = 2f,
-        MagSize = 13f,
+        Damage = 1.6f,
+        MagSize = 9f,
         ReloadTime = 1.5f,
 
-        FireRate = 17f,
+        FireRate = 15f,
         BulletSpeed = 1100f,
-        VelocityDecay = 2f,
+        VelocityDecay = 3f,
         MinBulletSpeed = 50f,
 
         Automatic = true,
@@ -52,7 +52,7 @@ public class GunData
         kickBack = 2f,
 
         BulletsPerShot = 1,
-        SpreadAngle = 0.31f,
+        SpreadAngle = 0.38f,
 
         BurstCount = 0,
         BurstDelay = 0f,
@@ -136,7 +136,7 @@ public class GunData
         ReloadTime = 1.8f,
 
         FireRate = 8f,
-        SpreadAngle = 0.38f,
+        SpreadAngle = 0.25f,
         BulletSpeed = 975f,
         VelocityDecay = 2.3f,
         MinBulletSpeed = 50f,
@@ -188,8 +188,8 @@ public class GunData
         SpreadAngle = 0.3f,
         BulletsPerShot = 6,
 
-        BulletSpeed = 550f,
-        VelocityDecay = 2.6f,
+        BulletSpeed = 800f,
+        VelocityDecay = 2.3f,
         MinBulletSpeed = 0f,
 
         Automatic = false,

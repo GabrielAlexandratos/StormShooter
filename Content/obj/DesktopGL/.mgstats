@@ -1,12 +1,12 @@
 Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
-"C:/Users/User/Documents/StormShooter/Content/bullet.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/bullet.xnb","TextureProcessor","Texture2DContent",171,445,0.0658276
-"C:/Users/User/Documents/StormShooter/Content/crosshair.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/crosshair.xnb","TextureProcessor","Texture2DContent",125,569,0.0018916
-"C:/Users/User/Documents/StormShooter/Content/gun_asval.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/gun_asval.xnb","TextureProcessor","Texture2DContent",308,1005,0.0014639
-"C:/Users/User/Documents/StormShooter/Content/gun_scraprifle.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/gun_scraprifle.xnb","TextureProcessor","Texture2DContent",327,913,0.001047
-"C:/Users/User/Documents/StormShooter/Content/gun_shotgun.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/gun_shotgun.xnb","TextureProcessor","Texture2DContent",286,769,0.0011441
-"C:/Users/User/Documents/StormShooter/Content/gun_smg.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/gun_smg.xnb","TextureProcessor","Texture2DContent",308,805,0.0011262
-"C:/Users/User/Documents/StormShooter/Content/snow_floor_0.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/snow_floor_0.xnb","TextureProcessor","Texture2DContent",142,1109,0.0021564
-"C:/Users/User/Documents/StormShooter/Content/snow_floor_1.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/snow_floor_1.xnb","TextureProcessor","Texture2DContent",99,1109,0.0011005
-"C:/Users/User/Documents/StormShooter/Content/snow_floor_2.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/snow_floor_2.xnb","TextureProcessor","Texture2DContent",114,1109,0.0010798
-"C:/Users/User/Documents/StormShooter/Content/snow_wall_0.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/snow_wall_0.xnb","TextureProcessor","Texture2DContent",124,1109,0.0009895
-"C:/Users/User/Documents/StormShooter/Content/snow_wall_1.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/snow_wall_1.xnb","TextureProcessor","Texture2DContent",129,1109,0.0009811
+"C:/Users/User/Documents/StormShooter/Content/bullet.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/bullet.xnb","TextureProcessor","Texture2DContent",171,445,0.0647037
+"C:/Users/User/Documents/StormShooter/Content/crosshair.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/crosshair.xnb","TextureProcessor","Texture2DContent",125,569,0.0021774
+"C:/Users/User/Documents/StormShooter/Content/gun_asval.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/gun_asval.xnb","TextureProcessor","Texture2DContent",308,1005,0.0014071
+"C:/Users/User/Documents/StormShooter/Content/gun_scraprifle.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/gun_scraprifle.xnb","TextureProcessor","Texture2DContent",328,1085,0.0009797
+"C:/Users/User/Documents/StormShooter/Content/gun_shotgun.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/gun_shotgun.xnb","TextureProcessor","Texture2DContent",286,769,0.0008984
+"C:/Users/User/Documents/StormShooter/Content/gun_smg.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/gun_smg.xnb","TextureProcessor","Texture2DContent",308,805,0.0009167
+"C:/Users/User/Documents/StormShooter/Content/snow_floor_0.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/snow_floor_0.xnb","TextureProcessor","Texture2DContent",142,1109,0.0013277
+"C:/Users/User/Documents/StormShooter/Content/snow_floor_1.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/snow_floor_1.xnb","TextureProcessor","Texture2DContent",99,1109,0.0013634
+"C:/Users/User/Documents/StormShooter/Content/snow_floor_2.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/snow_floor_2.xnb","TextureProcessor","Texture2DContent",114,1109,0.001338
+"C:/Users/User/Documents/StormShooter/Content/snow_wall_0.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/snow_wall_0.xnb","TextureProcessor","Texture2DContent",124,1109,0.001007
+"C:/Users/User/Documents/StormShooter/Content/snow_wall_1.png","C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/snow_wall_1.xnb","TextureProcessor","Texture2DContent",129,1109,0.0010089

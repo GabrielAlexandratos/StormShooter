@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PipelineBuildEvent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <SourceFile>C:/Users/User/Documents/StormShooter/Content/gun_scraprifle.png</SourceFile>
-  <SourceTime>2026-04-10T21:16:53.9241122+10:00</SourceTime>
+  <SourceTime>2026-04-10T22:37:23.3866911+10:00</SourceTime>
   <DestFile>C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/gun_scraprifle.xnb</DestFile>
-  <DestTime>2026-04-10T21:17:16.5193866+10:00</DestTime>
+  <DestTime>2026-04-10T22:37:48.4042767+10:00</DestTime>
   <Importer>TextureImporter</Importer>
   <ImporterTime>2025-10-21T01:25:32+11:00</ImporterTime>
   <Processor>TextureProcessor</Processor>
