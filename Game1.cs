@@ -99,13 +99,14 @@ public class Game1 : Game
 
         _gunTextures["gun_smg"] = Content.Load<Texture2D>("gun_smg");
         _gunTextures["gun_shotgun"] = Content.Load<Texture2D>("gun_shotgun");
+        _gunTextures["gun_asval"] = Content.Load<Texture2D>("gun_asval");
 
         _tileTextures[TileType.Empty] = new[]
         {
-        Content.Load<Texture2D>("snow_floor_0"),
-        Content.Load<Texture2D>("snow_floor_1"),
-        Content.Load<Texture2D>("snow_floor_2"),
-    };
+            Content.Load<Texture2D>("snow_floor_0"),
+            Content.Load<Texture2D>("snow_floor_1"),
+            Content.Load<Texture2D>("snow_floor_2"),
+        };
 
         _tileTextures[TileType.Wall] = new[]
         {
@@ -113,7 +114,7 @@ public class Game1 : Game
         Content.Load<Texture2D>("snow_wall_1"),
     };
 
-        _currentGun = GunData.MachineGun;
+        _currentGun = GunData.AssaultRifle;
 
         _lighting = new LightingRenderer(GraphicsDevice, VirtualWidth, VirtualHeight)
         {
@@ -224,11 +225,10 @@ public class Game1 : Game
         _player.Update(dt, kb, mouseWorld, IsWall);
         _enemyManager.Update(dt, _lighting);
 
-        if (kb.IsKeyDown(Keys.D1)) { _currentGun = GunData.MachineGun; _gunController.CancelReload(); }
+        if (kb.IsKeyDown(Keys.D1)) { _currentGun = GunData.ScrapRifle; _gunController.CancelReload(); }
         if (kb.IsKeyDown(Keys.D2)) { _currentGun = GunData.Shotgun; _gunController.CancelReload(); }
-        if (kb.IsKeyDown(Keys.D3)) { _currentGun = GunData.BurstRifle; _gunController.CancelReload(); }
-        if (kb.IsKeyDown(Keys.D4)) { _currentGun = GunData.Smg; _gunController.CancelReload(); }
-        if (kb.IsKeyDown(Keys.D5)) { _currentGun = GunData.LongGun; _gunController.CancelReload(); }
+        if (kb.IsKeyDown(Keys.D3)) { _currentGun = GunData.VAL; _gunController.CancelReload(); }
+//        if (kb.IsKeyDown(Keys.D4)) { _currentGun = GunData.Smg; _gunController.CancelReload(); }
 
         _gunController.Update(dt, mouse, kb, mouseWorld, _player, _currentGun, _bulletManager, _lighting, ref _shakeTime, ref _shakeStrength, ref _shakeOffset);
         _bulletManager.Update(dt, _enemyManager.Enemies, _particles, _lighting, _currentGun, ref _hitStopTime, ref _shakeTime, ref _shakeStrength, VirtualWidth, VirtualHeight, _random, IsWall);
