@@ -23,6 +23,8 @@ public class Game1 : Game
     private Gun _currentGun;
     private BulletManager _bulletManager;
     private Texture2D _bulletTexture;
+    private Texture2D _playerWalkTexture;
+    private Texture2D _playerIdleTexture;
     private readonly Random _random = new();
     private GunController _gunController;
 
@@ -41,7 +43,7 @@ public class Game1 : Game
     private int _gridWidth = 30;
     private int _gridHeight = 35;
     private int _tileSize = 16;
-
+    
     private Dictionary<string, Texture2D> _gunTextures = new();
     private Dictionary<TileType, Texture2D[]> _tileTextures = new();
 
@@ -93,6 +95,9 @@ public class Game1 : Game
         _crosshairTexture = Content.Load<Texture2D>("crosshair");
         _bulletTexture = Content.Load<Texture2D>("bullet");
 
+        _playerIdleTexture = Content.Load<Texture2D>("player_idle");
+        _playerWalkTexture = Content.Load<Texture2D>("player_walk");
+        
         _gunTextures["gun_scraprifle"] = Content.Load<Texture2D>("gun_scraprifle");
         _gunTextures["gun_shotgun"] = Content.Load<Texture2D>("gun_shotgun");
         _gunTextures["gun_asval"] = Content.Load<Texture2D>("gun_asval");
@@ -140,7 +145,7 @@ public class Game1 : Game
                 _grid[x, y] = new Tile { Type = generated[x, y], Variant = _random.Next(0, 3) };
 
         Vector2 spawnPos = FindSpawnPosition();
-        _player = new Player(spawnPos, Settings.PlayerSpeed, _pixel);
+        _player = new Player(spawnPos, Settings.PlayerSpeed, _playerIdleTexture, _playerWalkTexture);
 
         var spawner = new EnemySpawner(_grid, _tileSize);
         spawner.Spawn(rooms, _enemyManager, spawnPos);
@@ -217,16 +222,18 @@ public class Game1 : Game
         _particles.Update(dt);
 
         Vector2 lookOffset = (mouseWorld - _player.Position) * 0.2f;
-        Vector2 cameraTarget = _player.Position + lookOffset - new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
-        _shakeOffset = Vector2.Lerp(_shakeOffset, Vector2.Zero, dt * 20f);
+        Vector2 cameraTarget = _player.Position + lookOffset
+                               - new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
+
         _cameraPos = Vector2.Lerp(_cameraPos, cameraTarget, 10f * dt);
+
+        _shakeOffset = Vector2.Lerp(_shakeOffset, Vector2.Zero, dt * 20f);
 
         base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime)
     {
-        _frameCount++;
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
         var mouse = Mouse.GetState();
 
@@ -242,7 +249,7 @@ public class Game1 : Game
         finalDestRect.X += (int)(_shakeOffset.X * currentScale);
         finalDestRect.Y += (int)(_shakeOffset.Y * currentScale);
 
-        Vector2 roundedCamera = new Vector2((float)Math.Round(_cameraPos.X), (float)Math.Round(_cameraPos.Y));
+        Vector2 roundedCamera = new Vector2(MathF.Round(_cameraPos.X), MathF.Round(_cameraPos.Y));
         Matrix lowResCamera = Matrix.CreateTranslation(-roundedCamera.X, -roundedCamera.Y, 0f);
 
         var lightMap = _lighting.BuildLightMap(_spriteBatch, _player.Position, _cameraPos, dt);
@@ -338,7 +345,7 @@ public class Game1 : Game
             if (_grid[x, y].Type == TileType.Empty)
                 return new Vector2(x * _tileSize + _tileSize / 2f, y * _tileSize + _tileSize / 2f);
         }
-        return new Vector2(0, 0);
+        return Vector2.Zero;
     }
 
     private Texture2D GetGunTexture(Gun gun)

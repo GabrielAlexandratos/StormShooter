@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PipelineBuildEvent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <SourceFile>C:/Users/User/Documents/StormShooter/Content/gun_smg.png</SourceFile>
-  <SourceTime>2026-04-09T12:51:33.4238153+10:00</SourceTime>
-  <DestFile>C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/Content/gun_smg.xnb</DestFile>
-  <DestTime>2026-04-13T12:07:05.7256428+10:00</DestTime>
+  <SourceFile>C:/Users/User/Documents/StormShooter/Content/player_walk.png</SourceFile>
+  <SourceTime>2026-04-13T22:16:16.3379783+10:00</SourceTime>
+  <DestFile>C:/Users/User/Documents/StormShooter/Content/bin/DesktopGL/Content/player_walk.xnb</DestFile>
+  <DestTime>2026-04-13T22:16:33.9803376+10:00</DestTime>
   <Importer>TextureImporter</Importer>
   <ImporterTime>2025-10-21T01:25:32+11:00</ImporterTime>
   <Processor>TextureProcessor</Processor>

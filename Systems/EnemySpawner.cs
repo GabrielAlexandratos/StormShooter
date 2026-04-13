@@ -18,25 +18,53 @@ public class EnemySpawner
 
     public void Spawn(List<Room> rooms, EnemyManager manager, Vector2 playerPos)
     {
-        int clusterCount = Math.Min(3, 4);
-        List<Room> candidates = new();
+        int clusterCount = Math.Min(rooms.Count, 4);
+
+        List<Room> safe = new();
+        List<Room> fallback = new();
 
         foreach (var room in rooms)
         {
-            if (Vector2.Distance(room.Position * _tileSize, playerPos) < 120f)
-                continue;
-            candidates.Add(room);
+            if (Vector2.Distance(room.Position * _tileSize, playerPos) < 300f)
+                fallback.Add(room);
+            else
+                safe.Add(room);
         }
 
-        if (candidates.Count == 0) candidates = new List<Room>(rooms);
+        safe.Sort((a, b) =>
+            Vector2.Distance(a.Position * _tileSize, playerPos)
+                .CompareTo(Vector2.Distance(b.Position * _tileSize, playerPos)));
 
-        for (int i = 0; i < clusterCount && candidates.Count > 0; i++)
+        List<Room> chosen = new();
+
+        if (safe.Count >= clusterCount)
         {
-            int index = _random.Next(candidates.Count);
-            var room = candidates[index];
-            SpawnCluster(room, manager);
-            candidates.RemoveAt(index);
+            float bucketSize = (float)safe.Count / clusterCount;
+            for (int i = 0; i < clusterCount; i++)
+            {
+                int start = (int)(i * bucketSize);
+                int end   = (int)((i + 1) * bucketSize);
+                end = Math.Min(end, safe.Count);
+                if (start >= end) start = Math.Max(0, end - 1);
+                chosen.Add(safe[_random.Next(start, end)]);
+            }
         }
+        else
+        {
+            chosen.AddRange(safe);
+            fallback.Sort((a, b) =>
+                Vector2.Distance(a.Position * _tileSize, playerPos)
+                    .CompareTo(Vector2.Distance(b.Position * _tileSize, playerPos)));
+
+            for (int i = fallback.Count - 1; i >= 0 && chosen.Count < clusterCount; i--)
+            {
+                if (!chosen.Contains(fallback[i]))
+                    chosen.Add(fallback[i]);
+            }
+        }
+
+        foreach (var room in chosen)
+            SpawnCluster(room, manager);
     }
 
     private void SpawnCluster(Room room, EnemyManager manager)
@@ -45,10 +73,12 @@ public class EnemySpawner
         int attempts = 0;
         int spawned = 0;
 
-        while (spawned < count && attempts < count * 10)
+        while (spawned < count && attempts < count * 35)
         {
             attempts++;
             float angle = (float)(_random.NextDouble() * Math.PI * 2);
+            
+            
             float radius = (float)_random.NextDouble() * room.Radius;
             Vector2 pos = (room.Position * _tileSize) + new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * radius * _tileSize;
 
@@ -59,7 +89,7 @@ public class EnemySpawner
 
             if (_grid[tx, ty].Type == TileType.Empty && IsFarFromOthers(pos, manager))
             {
-                manager.AddEnemy(pos, EnemyType.Basic, GunData.VAL);
+                manager.AddEnemy(pos, EnemyType.Basic, GunData.ScrapRifle);
                 spawned++;
             }
         }

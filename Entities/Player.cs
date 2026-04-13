@@ -16,18 +16,24 @@ public class Player
     private Vector2 _recoilOffset;
     private float _recoilRotation;
     private float _recoilRecoverSpeed = 10f;
-    private Texture2D _pixel;
+
+    private AnimatedSprite _idleAnim;
+    private AnimatedSprite _walkAnim;
+    private AnimatedSprite _currentAnim;
+    private bool _isMoving = false;
 
     public Vector2 GunPos => _gunPos;
     public float GunRotation => _gunRotation;
     public float FinalRotation => _finalRotation;
     public bool GunFlip => _gunFlip;
 
-    public Player(Vector2 startPos, float speed, Texture2D pixel)
+    public Player(Vector2 startPos, float speed, Texture2D idleTexture, Texture2D walkTexture)
     {
         Position = startPos;
         _speed = speed;
-        _pixel = pixel;
+        _idleAnim = new AnimatedSprite(idleTexture, 2, 2f);
+        _walkAnim = new AnimatedSprite(walkTexture, 4, 8f);
+        _currentAnim = _idleAnim;
     }
 
     public void Update(float dt, KeyboardState kb, Vector2 mouseWorld, Func<Vector2, bool> isWall)
@@ -40,16 +46,24 @@ public class Player
 
         if (move != Vector2.Zero) move.Normalize();
         move *= _speed * dt;
+        
+        bool wasMoving = _isMoving;
+        _isMoving = move != Vector2.Zero;
 
-        // Collision handling
+        if (_isMoving != wasMoving)
+        {
+            _currentAnim = _isMoving ? _walkAnim : _idleAnim;
+        }
+        
+        _currentAnim.Update(dt);
+
         if (!isWall(new Vector2(Position.X + move.X, Position.Y))) Position.X += move.X;
         if (!isWall(new Vector2(Position.X, Position.Y + move.Y))) Position.Y += move.Y;
 
-        // Aiming
         Vector2 direction = mouseWorld - Position;
         if (direction.LengthSquared() > 0.0001f) direction.Normalize();
 
-        _gunPos = Position + direction * 6f + _recoilOffset;
+        _gunPos = Position + direction * 0.5f + _recoilOffset + new Vector2(0f, 3f);
         _gunRotation = (float)Math.Atan2(direction.Y, direction.X);
         _finalRotation = _gunRotation + _recoilRotation;
         _gunFlip = direction.X < 0;
@@ -66,7 +80,6 @@ public class Player
 
     public void Draw(SpriteBatch spriteBatch, Texture2D gunTexture, Gun gun)
     {
-        Vector2 drawPos = new Vector2(MathF.Round(Position.X), MathF.Round(Position.Y));
         Vector2 gunDrawPos = new Vector2(MathF.Round(_gunPos.X), MathF.Round(_gunPos.Y));
 
         if (gunTexture.Width == 1 && gunTexture.Height == 1)
@@ -86,7 +99,9 @@ public class Player
                 _gunFlip ? SpriteEffects.FlipVertically : SpriteEffects.None, 0f);
         }
         
-        spriteBatch.Draw(_pixel, drawPos, null, Color.White, 0f, new Vector2(0.5f, 0.5f), new Vector2(10, 10), SpriteEffects.None, 0f);
+        Rectangle? sourceRect = _currentAnim.GetSourceRect();
+        
+        spriteBatch.Draw(_currentAnim.Texture, Position, sourceRect, Color.White, 0f, new Vector2(_currentAnim.FrameWidth / 2, _currentAnim.FrameHeight / 2), new Vector2(1f, 1f), _gunFlip ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0f);
    }
     
     public Vector2 GetMuzzleWorld(Gun gun)

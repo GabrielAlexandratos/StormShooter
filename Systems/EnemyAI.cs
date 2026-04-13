@@ -55,8 +55,8 @@ public class EnemyAI
     // automatic firing gun vars
     private float _autoFireTimeRemaining;
     private float _autoFireShotTimer;
-    private const float AutoFireDuration = 0.6f;
-    private const float AutoFireDurationRand = 0.1f;
+    private const float AutoFireDuration = 0.5f;
+    private const float AutoFireDurationRand = 0.08f;
     private const float BetweenBurstPause = 1.2f;
 
     public float AimAngle { get; private set; }
@@ -181,7 +181,7 @@ public class EnemyAI
             PickRepositionTarget(playerPos);
         
         bool suppressFire = Vector2.Distance(_enemy.Position, _lastKnownPlayerPos) < DetectRadius * 0.7f;
-        UpdateShooting(dt, _lastKnownPlayerPos, fireCallback, suppressFire);
+        UpdateShooting(dt, playerPos, fireCallback, hasLOS);
     }
 
     private void PickRepositionTarget(Vector2 playerPos)

@@ -10,6 +10,8 @@
     <File>C:/Users/User/Documents/StormShooter/Content/gun_scraprifle.png</File>
     <File>C:/Users/User/Documents/StormShooter/Content/gun_shotgun.png</File>
     <File>C:/Users/User/Documents/StormShooter/Content/gun_smg.png</File>
+    <File>C:/Users/User/Documents/StormShooter/Content/player_idle.png</File>
+    <File>C:/Users/User/Documents/StormShooter/Content/player_walk.png</File>
     <File>C:/Users/User/Documents/StormShooter/Content/snow_floor_0.png</File>
     <File>C:/Users/User/Documents/StormShooter/Content/snow_floor_1.png</File>
     <File>C:/Users/User/Documents/StormShooter/Content/snow_floor_2.png</File>
@@ -17,6 +19,8 @@
     <File>C:/Users/User/Documents/StormShooter/Content/snow_wall_1.png</File>
   </SourceFiles>
   <DestFiles>
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />

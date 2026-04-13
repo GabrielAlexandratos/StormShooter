@@ -17,7 +17,7 @@ public class EnemyManager
     public LightingRenderer Lighting  { get; set; }
     public Random Rng { get; set; } = new();
 
-    private readonly Gun _enemyGun = GunData.VAL;
+    private readonly Gun _enemyGun = GunData.ScrapRifle;
 
     private bool HasLOS(Vector2 a, Vector2 b)
     {

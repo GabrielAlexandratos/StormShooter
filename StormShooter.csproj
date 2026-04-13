@@ -28,6 +28,5 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Content\bin\" />
-    <Folder Include="Content\obj\" />
   </ItemGroup>
 </Project>
