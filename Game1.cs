@@ -18,7 +18,6 @@ public class Game1 : Game
     private static int VirtualHeight => Settings.VirtualHeight;
 
     private Texture2D _crosshairTexture;
-
     private Texture2D _pixel;
     private Player _player;
     private Gun _currentGun;
@@ -38,20 +37,17 @@ public class Game1 : Game
     private LightingRenderer _lighting;
     private KeyboardState _previousKb;
 
-    // Tiles
     private Tile[,] _grid;
-    private int _gridWidth = 120;
-    private int _gridHeight = 120;
+    private int _gridWidth = 30;
+    private int _gridHeight = 35;
     private int _tileSize = 16;
 
     private Dictionary<string, Texture2D> _gunTextures = new();
     private Dictionary<TileType, Texture2D[]> _tileTextures = new();
 
-    // FPS Counter
     private int _frameCount = 0;
     private int _currentFps = 0;
     private double _fpsTimer = 0;
-    private SpriteFont _font;
 
     private static readonly BlendState MultiplyBlend = new BlendState
     {
@@ -127,6 +123,12 @@ public class Game1 : Game
         _enemyManager = new EnemyManager();
         _gunController = new GunController(_random);
 
+        _enemyManager.IsWall = IsWall;
+        _enemyManager.Bullets = _bulletManager;
+        _enemyManager.Particles = _particles;
+        _enemyManager.Lighting = _lighting;
+        _enemyManager.Rng = _random;
+
         LevelGenerator generator = new LevelGenerator();
         _grid = new Tile[_gridWidth, _gridHeight];
 
@@ -135,13 +137,7 @@ public class Game1 : Game
 
         for (int x = 0; x < _gridWidth; x++)
             for (int y = 0; y < _gridHeight; y++)
-            {
-                _grid[x, y] = new Tile
-                {
-                    Type = generated[x, y],
-                    Variant = _random.Next(0, 3)
-                };
-            }
+                _grid[x, y] = new Tile { Type = generated[x, y], Variant = _random.Next(0, 3) };
 
         Vector2 spawnPos = FindSpawnPosition();
         _player = new Player(spawnPos, Settings.PlayerSpeed, _pixel);
@@ -181,25 +177,12 @@ public class Game1 : Game
         var mouse = Mouse.GetState();
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        // FPS Logic
         _fpsTimer += dt;
-        if (_fpsTimer >= 1.0)
-        {
-            _currentFps = _frameCount;
-            _frameCount = 0;
-            _fpsTimer -= 1.0;
-        }
-
-        _fpsTimer += gameTime.ElapsedGameTime.TotalSeconds;
         _frameCount++;
-
         if (_fpsTimer >= 1.0)
         {
             _currentFps = _frameCount;
-
-            // Show fps count in the window title because I couldn't get a font to render
             Window.Title = $"StormShooter | FPS: {_currentFps} | Position: {(int)_player.Position.X}, {(int)_player.Position.Y}";
-
             _frameCount = 0;
             _fpsTimer -= 1.0;
         }
@@ -223,18 +206,16 @@ public class Game1 : Game
         Vector2 mouseWorld = _cameraPos + new Vector2(mouseX, mouseY);
 
         _player.Update(dt, kb, mouseWorld, IsWall);
-        _enemyManager.Update(dt, _lighting);
+        _enemyManager.Update(dt, _player.Position, _lighting);
 
         if (kb.IsKeyDown(Keys.D1)) { _currentGun = GunData.ScrapRifle; _gunController.CancelReload(); }
         if (kb.IsKeyDown(Keys.D2)) { _currentGun = GunData.Shotgun; _gunController.CancelReload(); }
         if (kb.IsKeyDown(Keys.D3)) { _currentGun = GunData.VAL; _gunController.CancelReload(); }
-//        if (kb.IsKeyDown(Keys.D4)) { _currentGun = GunData.Smg; _gunController.CancelReload(); }
 
         _gunController.Update(dt, mouse, kb, mouseWorld, _player, _currentGun, _bulletManager, _lighting, ref _shakeTime, ref _shakeStrength, ref _shakeOffset);
-        _bulletManager.Update(dt, _enemyManager.Enemies, _particles, _lighting, _currentGun, ref _hitStopTime, ref _shakeTime, ref _shakeStrength, VirtualWidth, VirtualHeight, _random, IsWall);
+        _bulletManager.Update(dt, _enemyManager.Enemies, _particles, _lighting, _currentGun, ref _hitStopTime, ref _shakeTime, ref _shakeStrength, VirtualWidth, VirtualHeight, _random, IsWall, _player);
         _particles.Update(dt);
 
-        // Camera
         Vector2 lookOffset = (mouseWorld - _player.Position) * 0.2f;
         Vector2 cameraTarget = _player.Position + lookOffset - new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
         _shakeOffset = Vector2.Lerp(_shakeOffset, Vector2.Zero, dt * 20f);
@@ -273,23 +254,16 @@ public class Game1 : Game
 
         int startX = Math.Max(0, (int)(roundedCamera.X / _tileSize));
         int startY = Math.Max(0, (int)(roundedCamera.Y / _tileSize));
-
         int endX = Math.Min(_gridWidth, startX + (VirtualWidth / _tileSize) + 2);
         int endY = Math.Min(_gridHeight, startY + (VirtualHeight / _tileSize) + 2);
 
-        // Only loop through visible tiles, this was causing insane performance drops before because I was looping over like 40000 tiles every frame
         for (int x = startX; x < endX; x++)
-        {
             for (int y = startY; y < endY; y++)
             {
                 var tile = _grid[x, y];
                 if (_tileTextures.TryGetValue(tile.Type, out Texture2D[] textures))
-                {
-                    var tex = textures[tile.Variant % textures.Length];
-                    _spriteBatch.Draw(tex, new Vector2(x * _tileSize, y * _tileSize), Color.White);
-                }
+                    _spriteBatch.Draw(textures[tile.Variant % textures.Length], new Vector2(x * _tileSize, y * _tileSize), Color.White);
             }
-        }
 
         _player.Draw(_spriteBatch, GetGunTexture(_currentGun), _currentGun);
         _enemyManager.Draw(_spriteBatch, _pixel);
@@ -297,7 +271,6 @@ public class Game1 : Game
         _particles.Draw(_spriteBatch, _pixel);
         _spriteBatch.End();
 
-        // ── Pass 2: Upscale world and apply lighting ────────────────────────────
         GraphicsDevice.SetRenderTarget(null);
         GraphicsDevice.Clear(Color.Black);
 
@@ -309,10 +282,8 @@ public class Game1 : Game
         _spriteBatch.Draw(lightMap, finalDestRect, Color.White);
         _spriteBatch.End();
 
-        // Draw UI in full resolution
         _spriteBatch.Begin(samplerState: _pointSampler);
 
-        // Ammo
         int currentAmmo = _gunController.GetCurrentAmmo(_currentGun);
         for (int i = 0; i < currentAmmo; i++)
         {
@@ -321,7 +292,6 @@ public class Game1 : Game
             _spriteBatch.Draw(_pixel, new Rectangle(ax, ay, (int)(2 * currentScale), (int)(6 * currentScale)), Color.Orange);
         }
 
-        // Reload Bar
         if (_gunController.IsReloading)
         {
             Vector2 screenPos = WorldToScreen(_player.Position, finalDestRect, currentScale);
@@ -330,12 +300,10 @@ public class Game1 : Game
             Rectangle reloadBg = new Rectangle((int)screenPos.X - barW / 2, (int)screenPos.Y - (int)(40 * currentScale), barW, barH);
             float progress = 1f - (_gunController.ReloadProgress / _currentGun.ReloadTime);
             Rectangle reloadFill = new Rectangle(reloadBg.X, reloadBg.Y, (int)(reloadBg.Width * progress), reloadBg.Height);
-
             _spriteBatch.Draw(_pixel, reloadBg, Color.Black * 0.5f);
             _spriteBatch.Draw(_pixel, reloadFill, Color.White);
         }
 
-        // Crosshair
         Vector2 crosshairPos = new Vector2(mouse.X, mouse.Y);
         Vector2 crosshairOrigin = new Vector2(_crosshairTexture.Width / 2, _crosshairTexture.Height / 2);
         _spriteBatch.Draw(_crosshairTexture, crosshairPos, null, Color.White, 0f, crosshairOrigin, 3f, SpriteEffects.None, 0f);
@@ -344,6 +312,7 @@ public class Game1 : Game
 
         base.Draw(gameTime);
     }
+
     protected override void UnloadContent()
     {
         _lighting?.Dispose();

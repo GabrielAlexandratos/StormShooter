@@ -18,7 +18,7 @@ public class EnemySpawner
 
     public void Spawn(List<Room> rooms, EnemyManager manager, Vector2 playerPos)
     {
-        int clusterCount = Math.Min(rooms.Count, 6);
+        int clusterCount = Math.Min(3, 4);
         List<Room> candidates = new();
 
         foreach (var room in rooms)
@@ -41,7 +41,7 @@ public class EnemySpawner
 
     private void SpawnCluster(Room room, EnemyManager manager)
     {
-        int count = _random.Next(2, 4);
+        int count = _random.Next(2, 5);
         int attempts = 0;
         int spawned = 0;
 
@@ -59,7 +59,7 @@ public class EnemySpawner
 
             if (_grid[tx, ty].Type == TileType.Empty && IsFarFromOthers(pos, manager))
             {
-                manager.AddEnemy(pos, EnemyType.Basic);
+                manager.AddEnemy(pos, EnemyType.Basic, GunData.VAL);
                 spawned++;
             }
         }
@@ -69,7 +69,7 @@ public class EnemySpawner
     {
         foreach (var e in manager.Enemies)
         {
-            if (Vector2.Distance(e.Position, pos) < 30f) return false;
+            if (Vector2.Distance(e.Position, pos) < 50f) return false;
         }
         return true;
     }

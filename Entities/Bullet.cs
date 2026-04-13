@@ -14,8 +14,9 @@ public class Bullet
     public float MinSpeed;
     public bool IsAlive = true;
     public int BouncesRemaining;
-
     public float HitRadius;
+    public bool IsEnemy = false;
+    public float Damage = 0f;
 
     private float _timeActive = 0f;
     private float _lifeProgress = 0f;
@@ -29,7 +30,6 @@ public class Bullet
         MinSpeed = minSpeed;
         Scale = scale;
         BouncesRemaining = bounces;
-
         HitRadius = 1f * scale;
     }
 
@@ -46,9 +46,7 @@ public class Bullet
         Position += (Velocity * speedFactor) * dt;
 
         if (_lifeProgress >= 1.0f || (Velocity * speedFactor).Length() < 1f)
-        {
             IsAlive = false;
-        }
     }
 
     public void Draw(SpriteBatch spriteBatch, Texture2D texture)
@@ -59,9 +57,7 @@ public class Bullet
         float vanishThreshold = 0.91f;
         float visibility = 1.0f;
         if (_lifeProgress > vanishThreshold)
-        {
             visibility = 1.0f - ((_lifeProgress - vanishThreshold) / (1.0f - vanishThreshold));
-        }
 
         int visibleWidth = (int)(texture.Width * visibility);
         Rectangle sourceRect = new Rectangle(texture.Width - visibleWidth, 0, visibleWidth, texture.Height);
@@ -70,15 +66,13 @@ public class Bullet
         float widthScale = MathHelper.Clamp(speed / 300f, 0.9f, 1.3f) * Scale;
         Vector2 finalScale = new Vector2(lengthScale, widthScale);
 
-        // Make sure that the origin is at the tip of the bullet
         Vector2 origin = new Vector2(visibleWidth, texture.Height / 2f);
-        Vector2 visualOffset = Vector2.Normalize(Velocity) * (HitRadius * 0.5f);
 
         spriteBatch.Draw(
             texture,
             Position + (Vector2.Normalize(Velocity) * 7f),
             sourceRect,
-            Color.White,
+            IsEnemy ? new Color(255, 180, 40) : Color.White,
             rotation,
             origin,
             finalScale,
