@@ -17,12 +17,12 @@ public class EnemyAI
     private const float DetectRadius = 200f;
     private const float PreferredRange = 100f;
     private const float RangeDeadzone = 20f;
-    private const float OrbitSpeed = 55f;
+    private const float OrbitSpeed = 30f;
     private const float PatrolSpeed = 28f;
-    private const float AlertSpeed = 50f;
-    private const float RepositionSpeed = 60f;
-    private const float ShootInterval = 0.9f;
-    private const float ShootIntervalRand = 0.6f;
+    private const float AlertSpeed = 30f;
+    private const float RepositionSpeed = 40f;
+    private const float ShootInterval = 1.1f;
+    private const float ShootIntervalRand = 0.3f;
     private const float AccuracySpread = 0.08f;
 
     // burst fallback values
@@ -55,8 +55,8 @@ public class EnemyAI
     // automatic firing gun vars
     private float _autoFireTimeRemaining;
     private float _autoFireShotTimer;
-    private const float AutoFireDuration = 0.5f;
-    private const float AutoFireDurationRand = 0.08f;
+    private const float AutoFireDuration = 0.6f;
+    private const float AutoFireDurationRand = 0.1f;
     private const float BetweenBurstPause = 1.2f;
 
     public float AimAngle { get; private set; }

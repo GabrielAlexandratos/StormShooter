@@ -97,6 +97,18 @@
 /processorParam:TextureFormat=Color
 /build:player_idle.png
 
+#begin player_walk_new.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:player_walk_new.png
+
 #begin player_walk.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -168,4 +180,3 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:snow_wall_1.png
-

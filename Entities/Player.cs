@@ -32,7 +32,7 @@ public class Player
         Position = startPos;
         _speed = speed;
         _idleAnim = new AnimatedSprite(idleTexture, 2, 2f);
-        _walkAnim = new AnimatedSprite(walkTexture, 4, 8f);
+        _walkAnim = new AnimatedSprite(walkTexture, 6, 10f);
         _currentAnim = _idleAnim;
     }
 
@@ -80,8 +80,9 @@ public class Player
 
     public void Draw(SpriteBatch spriteBatch, Texture2D gunTexture, Gun gun)
     {
-        Vector2 gunDrawPos = new Vector2(MathF.Round(_gunPos.X), MathF.Round(_gunPos.Y));
-
+        //Vector2 gunDrawPos = new Vector2(MathF.Round(_gunPos.X), MathF.Round(_gunPos.Y));
+        Vector2 gunDrawPos = _gunPos;
+        
         if (gunTexture.Width == 1 && gunTexture.Height == 1)
         {
             spriteBatch.Draw(gunTexture, gunDrawPos, null, Color.Red, _finalRotation,

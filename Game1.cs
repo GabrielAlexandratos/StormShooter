@@ -40,7 +40,7 @@ public class Game1 : Game
     private KeyboardState _previousKb;
 
     private Tile[,] _grid;
-    private int _gridWidth = 30;
+    private int _gridWidth = 50;
     private int _gridHeight = 35;
     private int _tileSize = 16;
     
@@ -96,7 +96,7 @@ public class Game1 : Game
         _bulletTexture = Content.Load<Texture2D>("bullet");
 
         _playerIdleTexture = Content.Load<Texture2D>("player_idle");
-        _playerWalkTexture = Content.Load<Texture2D>("player_walk");
+        _playerWalkTexture = Content.Load<Texture2D>("player_walk_new");
         
         _gunTextures["gun_scraprifle"] = Content.Load<Texture2D>("gun_scraprifle");
         _gunTextures["gun_shotgun"] = Content.Load<Texture2D>("gun_shotgun");
@@ -249,8 +249,9 @@ public class Game1 : Game
         finalDestRect.X += (int)(_shakeOffset.X * currentScale);
         finalDestRect.Y += (int)(_shakeOffset.Y * currentScale);
 
-        Vector2 roundedCamera = new Vector2(MathF.Round(_cameraPos.X), MathF.Round(_cameraPos.Y));
-        Matrix lowResCamera = Matrix.CreateTranslation(-roundedCamera.X, -roundedCamera.Y, 0f);
+        //Vector2 roundedCamera = new Vector2(MathF.Round(_cameraPos.X), MathF.Round(_cameraPos.Y));
+        Vector2 cameraOffset = _cameraPos;
+        Matrix lowResCamera = Matrix.CreateTranslation(-cameraOffset.X, -cameraOffset.Y, 0f);
 
         var lightMap = _lighting.BuildLightMap(_spriteBatch, _player.Position, _cameraPos, dt);
 
@@ -259,8 +260,8 @@ public class Game1 : Game
 
         _spriteBatch.Begin(samplerState: _pointSampler, transformMatrix: lowResCamera);
 
-        int startX = Math.Max(0, (int)(roundedCamera.X / _tileSize));
-        int startY = Math.Max(0, (int)(roundedCamera.Y / _tileSize));
+        int startX = Math.Max(0, (int)(cameraOffset.X / _tileSize));
+        int startY = Math.Max(0, (int)(cameraOffset.Y / _tileSize));
         int endX = Math.Min(_gridWidth, startX + (VirtualWidth / _tileSize) + 2);
         int endY = Math.Min(_gridHeight, startY + (VirtualHeight / _tileSize) + 2);
 

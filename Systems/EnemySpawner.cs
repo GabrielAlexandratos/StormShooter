@@ -89,7 +89,7 @@ public class EnemySpawner
 
             if (_grid[tx, ty].Type == TileType.Empty && IsFarFromOthers(pos, manager))
             {
-                manager.AddEnemy(pos, EnemyType.Basic, GunData.ScrapRifle);
+                manager.AddEnemy(pos, EnemyType.Basic, GunData.EnemyRifle);
                 spawned++;
             }
         }

@@ -10,8 +10,8 @@ public class Enemy
     public Vector2 Velocity;
 
     public float Radius = 6f;
-    public float Health = 7f;
-    public Gun Gun { get; set; } = GunData.EnemyPistol;
+    public float Health = 6f;
+    public Gun Gun { get; set; } = null;
 
     private float _flashTime;
 

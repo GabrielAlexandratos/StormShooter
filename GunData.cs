@@ -117,6 +117,31 @@ public class GunData
         CanBounce = true,
         MaxBounces = 10
     };
+    
+    public static Gun EnemyRifle = new Gun
+    {
+        SpriteName = "gun_scraprifle",
+        SpriteOrigin = new Vector2(1f, 4f),
+        MuzzleOffset = new Vector2(15f, -1f),
+        Damage = 1.5f,
+        MagSize = 25f,
+        ReloadTime = 1.8f,
+        FireRate = 6f,
+        SpreadAngle = 0.32f,
+        BulletSpeed = 905f,
+        VelocityDecay = 2.3f,
+        MinBulletSpeed = 50f,
+        Automatic = true,
+        UseSpeedVariation = true,
+        ShakeStrength = 1.5f,
+        kickBack = 3.1f,
+        BulletsPerShot = 1,
+        BurstCount = 1,
+        RecoilPerShot = 2f,
+        RecoilRecovery = 8f,
+        CanBounce = true,
+        MaxBounces = 2
+    };
 
     public static Gun LongGun = new Gun
     {
@@ -152,27 +177,5 @@ public class GunData
         kickBack = 10f,
         CanBounce = true,
         MaxBounces = 10
-    };
-
-    public static Gun EnemyPistol = new Gun
-    {
-        Damage = 1.5f,
-        MagSize = 999f,
-        ReloadTime = 999f,
-        FireRate = 0f,
-        BulletSpeed = 420f,
-        VelocityDecay = 0f,
-        MinBulletSpeed = 0f,
-        Automatic = false,
-        ShakeStrength = 0f,
-        kickBack = 0f,
-        BulletsPerShot = 1,
-        SpreadAngle = 0f,
-        BurstCount = 0,
-        BurstDelay = 0f,
-        RecoilPerShot = 0f,
-        RecoilRecovery = 0f,
-        CanBounce = false,
-        MaxBounces = 0,
     };
 }
