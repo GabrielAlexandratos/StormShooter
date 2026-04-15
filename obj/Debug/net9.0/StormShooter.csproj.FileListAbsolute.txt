@@ -93,3 +93,4 @@ C:/Users/User/Documents/StormShooter/bin/Debug/net9.0/Content/player_idle.xnb
 /Users/gabriel/RiderProjects/StormShooter/bin/Debug/net9.0/Content/player_idle.xnb
 /Users/gabriel/RiderProjects/StormShooter/bin/Debug/net9.0/Content/player_walk.xnb
 /Users/gabriel/RiderProjects/StormShooter/bin/Debug/net9.0/Content/player_walk_new.xnb
+/Users/gabriel/RiderProjects/StormShooter/bin/Debug/net9.0/Content/circle_crosshair.xnb

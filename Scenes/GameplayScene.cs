@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -6,16 +6,13 @@ using Microsoft.Xna.Framework.Input;
 
 namespace StormShooter;
 
-public class Game1 : Game
+public class GameplayScene : Scene
 {
-    private GraphicsDeviceManager _graphics;
-    private SpriteBatch _spriteBatch;
-
     private RenderTarget2D _renderTarget;
     private readonly SamplerState _pointSampler = SamplerState.PointClamp;
 
-    private static int VirtualWidth => Settings.VirtualWidth;
-    private static int VirtualHeight => Settings.VirtualHeight;
+    private int VirtualWidth => Settings.VirtualWidth;
+    private int VirtualHeight => Settings.VirtualHeight;
 
     private Texture2D _crosshairTexture;
     private Texture2D _pixel;
@@ -61,63 +58,43 @@ public class Game1 : Game
         AlphaDestinationBlend = Blend.Zero,
     };
 
-    public Game1()
+    public GameplayScene(Game1 game) : base(game)
     {
-        _graphics = new GraphicsDeviceManager(this);
-
-        int monitorHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
-        int initialScale = Math.Max(1, (monitorHeight / Settings.VirtualHeight) - 1);
-
-        _graphics.PreferredBackBufferWidth = Settings.VirtualWidth * initialScale;
-        _graphics.PreferredBackBufferHeight = Settings.VirtualHeight * initialScale;
-        _graphics.HardwareModeSwitch = false;
-        _graphics.ApplyChanges();
-
-        Window.AllowUserResizing = true;
-        Content.RootDirectory = "Content";
-        IsMouseVisible = true;
     }
 
-    protected override void LoadContent()
+    public override void LoadContent()
     {
-        _renderTarget = new RenderTarget2D(GraphicsDevice, VirtualWidth, VirtualHeight);
-        _spriteBatch = new SpriteBatch(GraphicsDevice);
-        _graphics.PreferMultiSampling = false;
-        _graphics.SynchronizeWithVerticalRetrace = false;
-        this.IsFixedTimeStep = true;
-        this.TargetElapsedTime = TimeSpan.FromSeconds(1d / 60d);
-        _graphics.ApplyChanges();
+        _renderTarget = new RenderTarget2D(Game.GraphicsDevice, VirtualWidth, VirtualHeight);
 
-        _pixel = new Texture2D(GraphicsDevice, 1, 1);
+        _pixel = new Texture2D(Game.GraphicsDevice, 1, 1);
         _pixel.SetData(new[] { Color.White });
 
-        IsMouseVisible = false;
-        _crosshairTexture = Content.Load<Texture2D>("crosshair");
-        _bulletTexture = Content.Load<Texture2D>("bullet");
+        _crosshairTexture = Game.Content.Load<Texture2D>("crosshair");
+        _bulletTexture = Game.Content.Load<Texture2D>("bullet");
 
-        _playerIdleTexture = Content.Load<Texture2D>("player_idle");
-        _playerWalkTexture = Content.Load<Texture2D>("player_walk_new");
+        _playerIdleTexture = Game.Content.Load<Texture2D>("player_idle");
+        _playerWalkTexture = Game.Content.Load<Texture2D>("player_walk_new");
         
-        _gunTextures["gun_scraprifle"] = Content.Load<Texture2D>("gun_scraprifle");
-        _gunTextures["gun_shotgun"] = Content.Load<Texture2D>("gun_shotgun");
-        _gunTextures["gun_asval"] = Content.Load<Texture2D>("gun_asval");
+        _gunTextures["gun_scraprifle"] = Game.Content.Load<Texture2D>("gun_scraprifle");
+        _gunTextures["gun_shotgun"] = Game.Content.Load<Texture2D>("gun_shotgun");
+        _gunTextures["gun_asval"] = Game.Content.Load<Texture2D>("gun_asval");
 
         _tileTextures[TileType.Empty] = new[]
         {
-            Content.Load<Texture2D>("snow_floor_0"),
-            Content.Load<Texture2D>("snow_floor_1"),
-            Content.Load<Texture2D>("snow_floor_2"),
+            Game.Content.Load<Texture2D>("snow_floor_0"),
+            Game.Content.Load<Texture2D>("snow_floor_1"),
+            Game.Content.Load<Texture2D>("snow_floor_2"),
         };
 
         _tileTextures[TileType.Wall] = new[]
         {
-            Content.Load<Texture2D>("snow_wall_0"),
-            Content.Load<Texture2D>("snow_wall_1"),
+            Game.Content.Load<Texture2D>("snow_wall_0"),
+            Game.Content.Load<Texture2D>("snow_wall_1"),
         };
 
         _currentGun = GunData.ScrapRifle;
 
-        _lighting = new LightingRenderer(GraphicsDevice, VirtualWidth, VirtualHeight)
+        _lighting = new LightingRenderer(Game.GraphicsDevice, VirtualWidth, VirtualHeight)
         {
             PlayerRadius = 60f,
             DimMultiplier = 10f,
@@ -153,30 +130,7 @@ public class Game1 : Game
         _cameraPos = spawnPos - new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
     }
 
-    private Rectangle GetDestinationRectangle()
-    {
-        int sw = _graphics.GraphicsDevice.PresentationParameters.BackBufferWidth;
-        int sh = _graphics.GraphicsDevice.PresentationParameters.BackBufferHeight;
-
-        float scaleX = (float)sw / VirtualWidth;
-        float scaleY = (float)sh / VirtualHeight;
-        float scale = Math.Min(scaleX, scaleY);
-
-        int rw = (int)(VirtualWidth * scale);
-        int rh = (int)(VirtualHeight * scale);
-
-        return new Rectangle((sw - rw) / 2, (sh - rh) / 2, rw, rh);
-    }
-
-    private Vector2 WorldToScreen(Vector2 worldPos, Rectangle destRect, float scale)
-    {
-        return new Vector2(
-            destRect.X + (worldPos.X - _cameraPos.X) * scale,
-            destRect.Y + (worldPos.Y - _cameraPos.Y) * scale
-        );
-    }
-
-    protected override void Update(GameTime gameTime)
+    public override void Update(GameTime gameTime)
     {
         var kb = Keyboard.GetState();
         var mouse = Mouse.GetState();
@@ -187,15 +141,22 @@ public class Game1 : Game
         if (_fpsTimer >= 1.0)
         {
             _currentFps = _frameCount;
-            Window.Title = $"StormShooter | FPS: {_currentFps} | Position: {(int)_player.Position.X}, {(int)_player.Position.Y}";
+            Game.Window.Title = $"StormShooter | FPS: {_currentFps} | Position: {(int)_player.Position.X}, {(int)_player.Position.Y}";
             _frameCount = 0;
             _fpsTimer -= 1.0;
         }
 
         if (_shakeTime > 0) _shakeTime -= dt;
 
-        if (kb.IsKeyDown(Keys.Escape)) Exit();
-        if (kb.IsKeyDown(Keys.F11) && _previousKb.IsKeyUp(Keys.F11)) _graphics.ToggleFullScreen();
+        if (kb.IsKeyDown(Keys.Escape)) 
+        {
+            Game.ChangeScene(new MainMenuScene(Game));
+            return;
+        }
+
+        if (kb.IsKeyDown(Keys.F11) && _previousKb.IsKeyUp(Keys.F11)) 
+            Game.Graphics.ToggleFullScreen();
+            
         _previousKb = kb;
 
         if (_hitStopTime > 0f)
@@ -226,13 +187,10 @@ public class Game1 : Game
                                - new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
 
         _cameraPos = Vector2.Lerp(_cameraPos, cameraTarget, 10f * dt);
-
         _shakeOffset = Vector2.Lerp(_shakeOffset, Vector2.Zero, dt * 20f);
-
-        base.Update(gameTime);
     }
 
-    protected override void Draw(GameTime gameTime)
+    public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
         var mouse = Mouse.GetState();
@@ -249,16 +207,15 @@ public class Game1 : Game
         finalDestRect.X += (int)(_shakeOffset.X * currentScale);
         finalDestRect.Y += (int)(_shakeOffset.Y * currentScale);
 
-        //Vector2 roundedCamera = new Vector2(MathF.Round(_cameraPos.X), MathF.Round(_cameraPos.Y));
         Vector2 cameraOffset = _cameraPos;
         Matrix lowResCamera = Matrix.CreateTranslation(-cameraOffset.X, -cameraOffset.Y, 0f);
 
-        var lightMap = _lighting.BuildLightMap(_spriteBatch, _player.Position, _cameraPos, dt);
+        var lightMap = _lighting.BuildLightMap(spriteBatch, _player.Position, _cameraPos, dt);
 
-        GraphicsDevice.SetRenderTarget(_renderTarget);
-        GraphicsDevice.Clear(Color.Black);
+        Game.GraphicsDevice.SetRenderTarget(_renderTarget);
+        Game.GraphicsDevice.Clear(Color.Black);
 
-        _spriteBatch.Begin(samplerState: _pointSampler, transformMatrix: lowResCamera);
+        spriteBatch.Begin(samplerState: _pointSampler, transformMatrix: lowResCamera);
 
         int startX = Math.Max(0, (int)(cameraOffset.X / _tileSize));
         int startY = Math.Max(0, (int)(cameraOffset.Y / _tileSize));
@@ -270,34 +227,34 @@ public class Game1 : Game
             {
                 var tile = _grid[x, y];
                 if (_tileTextures.TryGetValue(tile.Type, out Texture2D[] textures))
-                    _spriteBatch.Draw(textures[tile.Variant % textures.Length], new Vector2(x * _tileSize, y * _tileSize), Color.White);
+                    spriteBatch.Draw(textures[tile.Variant % textures.Length], new Vector2(x * _tileSize, y * _tileSize), Color.White);
             }
 
-        _player.Draw(_spriteBatch, GetGunTexture(_currentGun), _currentGun);
-        _enemyManager.Draw(_spriteBatch, _pixel);
-        _bulletManager.Draw(_spriteBatch, _bulletTexture);
-        _particles.Draw(_spriteBatch, _pixel);
-        _spriteBatch.End();
+        _player.Draw(spriteBatch, GetGunTexture(_currentGun), _currentGun);
+        _enemyManager.Draw(spriteBatch, _pixel);
+        _bulletManager.Draw(spriteBatch, _bulletTexture);
+        _particles.Draw(spriteBatch, _pixel);
+        spriteBatch.End();
 
-        GraphicsDevice.SetRenderTarget(null);
-        GraphicsDevice.Clear(Color.Black);
+        Game.GraphicsDevice.SetRenderTarget(null);
+        Game.GraphicsDevice.Clear(Color.Black);
 
-        _spriteBatch.Begin(samplerState: _pointSampler);
-        _spriteBatch.Draw(_renderTarget, finalDestRect, Color.White);
-        _spriteBatch.End();
+        spriteBatch.Begin(samplerState: _pointSampler);
+        spriteBatch.Draw(_renderTarget, finalDestRect, Color.White);
+        spriteBatch.End();
 
-        _spriteBatch.Begin(blendState: MultiplyBlend, samplerState: _pointSampler);
-        _spriteBatch.Draw(lightMap, finalDestRect, Color.White);
-        _spriteBatch.End();
+        spriteBatch.Begin(blendState: MultiplyBlend, samplerState: _pointSampler);
+        spriteBatch.Draw(lightMap, finalDestRect, Color.White);
+        spriteBatch.End();
 
-        _spriteBatch.Begin(samplerState: _pointSampler);
+        spriteBatch.Begin(samplerState: _pointSampler);
 
         int currentAmmo = _gunController.GetCurrentAmmo(_currentGun);
         for (int i = 0; i < currentAmmo; i++)
         {
             int ax = finalDestRect.X + (int)(10 * currentScale) + (int)(i * 4 * currentScale);
             int ay = finalDestRect.Y + finalDestRect.Height - (int)(15 * currentScale);
-            _spriteBatch.Draw(_pixel, new Rectangle(ax, ay, (int)(2 * currentScale), (int)(6 * currentScale)), Color.Orange);
+            spriteBatch.Draw(_pixel, new Rectangle(ax, ay, (int)(2 * currentScale), (int)(6 * currentScale)), Color.Orange);
         }
 
         if (_gunController.IsReloading)
@@ -308,20 +265,18 @@ public class Game1 : Game
             Rectangle reloadBg = new Rectangle((int)screenPos.X - barW / 2, (int)screenPos.Y - (int)(40 * currentScale), barW, barH);
             float progress = 1f - (_gunController.ReloadProgress / _currentGun.ReloadTime);
             Rectangle reloadFill = new Rectangle(reloadBg.X, reloadBg.Y, (int)(reloadBg.Width * progress), reloadBg.Height);
-            _spriteBatch.Draw(_pixel, reloadBg, Color.Black * 0.5f);
-            _spriteBatch.Draw(_pixel, reloadFill, Color.White);
+            spriteBatch.Draw(_pixel, reloadBg, Color.Black * 0.5f);
+            spriteBatch.Draw(_pixel, reloadFill, Color.White);
         }
 
         Vector2 crosshairPos = new Vector2(mouse.X, mouse.Y);
         Vector2 crosshairOrigin = new Vector2(_crosshairTexture.Width / 2, _crosshairTexture.Height / 2);
-        _spriteBatch.Draw(_crosshairTexture, crosshairPos, null, Color.White, 0f, crosshairOrigin, 3f, SpriteEffects.None, 0f);
+        spriteBatch.Draw(_crosshairTexture, crosshairPos, null, Color.White, 0f, crosshairOrigin, 3f, SpriteEffects.None, 0f);
 
-        _spriteBatch.End();
-
-        base.Draw(gameTime);
+        spriteBatch.End();
     }
 
-    protected override void UnloadContent()
+    public override void UnloadContent()
     {
         _lighting?.Dispose();
         _renderTarget?.Dispose();
@@ -329,7 +284,30 @@ public class Game1 : Game
         base.UnloadContent();
     }
 
-    bool IsWall(Vector2 pos)
+    private Rectangle GetDestinationRectangle()
+    {
+        int sw = Game.GraphicsDevice.PresentationParameters.BackBufferWidth;
+        int sh = Game.GraphicsDevice.PresentationParameters.BackBufferHeight;
+
+        float scaleX = (float)sw / VirtualWidth;
+        float scaleY = (float)sh / VirtualHeight;
+        float scale = Math.Min(scaleX, scaleY);
+
+        int rw = (int)(VirtualWidth * scale);
+        int rh = (int)(VirtualHeight * scale);
+
+        return new Rectangle((sw - rw) / 2, (sh - rh) / 2, rw, rh);
+    }
+
+    private Vector2 WorldToScreen(Vector2 worldPos, Rectangle destRect, float scale)
+    {
+        return new Vector2(
+            destRect.X + (worldPos.X - _cameraPos.X) * scale,
+            destRect.Y + (worldPos.Y - _cameraPos.Y) * scale
+        );
+    }
+
+    private bool IsWall(Vector2 pos)
     {
         int tx = (int)(pos.X / _tileSize);
         int ty = (int)(pos.Y / _tileSize);
@@ -337,7 +315,7 @@ public class Game1 : Game
         return _grid[tx, ty].Type == TileType.Wall;
     }
 
-    Vector2 FindSpawnPosition()
+    private Vector2 FindSpawnPosition()
     {
         for (int i = 0; i < 1000; i++)
         {

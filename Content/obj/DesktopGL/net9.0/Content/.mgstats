@@ -1,5 +1,6 @@
 Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
 "/Users/gabriel/RiderProjects/StormShooter/Content/bullet.png","/Users/gabriel/RiderProjects/StormShooter/Content/bin/DesktopGL/Content/bullet.xnb","TextureProcessor","Texture2DContent",171,445,0.058078
+"/Users/gabriel/RiderProjects/StormShooter/Content/circle_crosshair.png","/Users/gabriel/RiderProjects/StormShooter/Content/bin/DesktopGL/Content/circle_crosshair.xnb","TextureProcessor","Texture2DContent",108,281,0.045342
 "/Users/gabriel/RiderProjects/StormShooter/Content/crosshair.png","/Users/gabriel/RiderProjects/StormShooter/Content/bin/DesktopGL/Content/crosshair.xnb","TextureProcessor","Texture2DContent",125,569,0.00116
 "/Users/gabriel/RiderProjects/StormShooter/Content/gun_asval.png","/Users/gabriel/RiderProjects/StormShooter/Content/bin/DesktopGL/Content/gun_asval.xnb","TextureProcessor","Texture2DContent",308,1005,0.000639
 "/Users/gabriel/RiderProjects/StormShooter/Content/gun_scraprifle.png","/Users/gabriel/RiderProjects/StormShooter/Content/bin/DesktopGL/Content/gun_scraprifle.xnb","TextureProcessor","Texture2DContent",325,1085,0.000252

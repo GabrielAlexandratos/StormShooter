@@ -6,11 +6,13 @@
   <SourceFiles>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/bullet.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/crosshair.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/dot_crosshair.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_asval.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_scraprifle.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_shotgun.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_smg.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/player_idle.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/player_walk_new.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/player_walk.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/snow_floor_0.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/snow_floor_1.png</File>
@@ -19,6 +21,8 @@
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/snow_wall_1.png</File>
   </SourceFiles>
   <DestFiles>
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />

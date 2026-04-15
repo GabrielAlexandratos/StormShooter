@@ -5,6 +5,7 @@
   <Config />
   <SourceFiles>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/bullet.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/circle_crosshair.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/crosshair.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_asval.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_scraprifle.png</File>
@@ -20,6 +21,7 @@
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/snow_wall_1.png</File>
   </SourceFiles>
   <DestFiles>
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
