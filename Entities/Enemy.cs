@@ -10,7 +10,7 @@ public class Enemy
     public Vector2 Velocity;
 
     public float Radius = 6f;
-    public float Health = 6f;
+    public float Health = 4f;
     public Gun Gun { get; set; } = null;
 
     private float _flashTime;
@@ -46,7 +46,9 @@ public class Enemy
 
     public void Draw(SpriteBatch spriteBatch, Texture2D pixel)
     {
-        Color bodyColor = _flashTime > 0 ? Color.White : Color.Red;
+        Color bodyColor = _flashTime > 0 ? Color.White
+                       : AI?.State == EnemyState.WindUp ? Color.Orange
+                       : Color.Red;
 
         spriteBatch.Draw(pixel, Position, null, bodyColor, 0f,
             new Vector2(0.5f, 0.5f), new Vector2(Radius * 2, Radius * 2), SpriteEffects.None, 0f);

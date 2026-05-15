@@ -7,11 +7,9 @@ namespace StormShooter;
 public class Bullet
 {
     public Vector2 Position;
-    public Vector2 PreviousPosition;
     public Vector2 Velocity;
     public float Scale = 2f;
     public float Decay;
-    public float MinSpeed;
     public bool IsAlive = true;
     public int BouncesRemaining;
     public float HitRadius;
@@ -24,10 +22,8 @@ public class Bullet
     public Bullet(Vector2 position, Vector2 velocity, float decay = 0f, float minSpeed = 0f, float scale = 1f, int bounces = 0)
     {
         Position = position;
-        PreviousPosition = position;
         Velocity = velocity;
         Decay = decay;
-        MinSpeed = minSpeed;
         Scale = scale;
         BouncesRemaining = bounces;
         HitRadius = 1f * scale;
@@ -35,14 +31,11 @@ public class Bullet
 
     public void Update(float dt)
     {
-        PreviousPosition = Position;
-
         _timeActive += dt;
         _lifeProgress = Math.Clamp(_timeActive * Decay, 0f, 1f);
 
         float speedFactor = 1.0f - _lifeProgress;
 
-        Velocity *= MathF.Pow(0.98f, dt * 60f);
         Position += (Velocity * speedFactor) * dt;
 
         if (_lifeProgress >= 1.0f || (Velocity * speedFactor).Length() < 1f)
@@ -62,9 +55,9 @@ public class Bullet
         int visibleWidth = (int)(texture.Width * visibility);
         Rectangle sourceRect = new Rectangle(texture.Width - visibleWidth, 0, visibleWidth, texture.Height);
 
-        float lengthScale = MathHelper.Clamp(speed / 250f, 0.3f, 1.2f) * Scale;
-        float widthScale = MathHelper.Clamp(speed / 300f, 0.9f, 1.3f) * Scale;
-        Vector2 finalScale = new Vector2(lengthScale, widthScale);
+        float lengthScale = MathHelper.Clamp(speed / 400f, 0.5f, 5.0f) * Scale;
+        float widthScale  = MathHelper.Clamp(speed / 600f, 0.8f, 1.6f) * Scale;
+        Vector2 stretchedScale = new Vector2(lengthScale, widthScale);
 
         Vector2 origin = new Vector2(visibleWidth, texture.Height / 2f);
 
@@ -75,13 +68,13 @@ public class Bullet
             IsEnemy ? new Color(255, 180, 40) : Color.White,
             rotation,
             origin,
-            finalScale,
+            stretchedScale,
             SpriteEffects.None,
             0f
         );
     }
 
-    public bool IsOffscreen(int width, int height)
+    public bool IsBulletOffScreen(int width, int height)
     {
         return Position.X < -100 || Position.X > width + 100 || Position.Y < -100 || Position.Y > height + 100;
     }

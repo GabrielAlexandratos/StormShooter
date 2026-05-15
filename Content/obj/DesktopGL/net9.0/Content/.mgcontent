@@ -4,9 +4,18 @@
   <Platform>DesktopGL</Platform>
   <Config />
   <SourceFiles>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/pistolshot.wav</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/akreload.wav</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/dry_fire.wav</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/unload.wav</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/snowstep1.wav</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/snowstep2.wav</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/snowstep3.wav</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/humanhit1.wav</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/Fonts/HudFont.spritefont</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/bullet.png</File>
-    <File>/Users/gabriel/RiderProjects/StormShooter/Content/circle_crosshair.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/crosshair.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/dot_crosshair.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_asval.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_scraprifle.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_shotgun.png</File>
@@ -21,6 +30,15 @@
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/snow_wall_1.png</File>
   </SourceFiles>
   <DestFiles>
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />

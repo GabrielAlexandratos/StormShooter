@@ -18,89 +18,67 @@ public class EnemySpawner
 
     public void Spawn(List<Room> rooms, EnemyManager manager, Vector2 playerPos)
     {
-        int clusterCount = Math.Min(rooms.Count, 4);
+        if (rooms.Count == 0) return;
 
-        List<Room> safe = new();
-        List<Room> fallback = new();
+        Room safeRoom = ClosestRoom(rooms, playerPos);
+
+        const int maxTotal = 6;
+        int totalSpawned = 0;
 
         foreach (var room in rooms)
         {
-            if (Vector2.Distance(room.Position * _tileSize, playerPos) < 300f)
-                fallback.Add(room);
-            else
-                safe.Add(room);
+            if (totalSpawned >= maxTotal) break;
+            if (room == safeRoom) continue;
+
+            float dist = Vector2.Distance(room.Center * _tileSize, playerPos);
+            if (dist < 140f) continue; // buffer around spawn
+
+            // 1 enemy in nearby rooms, chance of 2 only in distant ones
+            int count = dist > 350f && _random.NextDouble() < 0.4 ? 2 : 1;
+            count = Math.Min(count, maxTotal - totalSpawned);
+
+            SpawnInRoom(room, count, manager);
+            totalSpawned += count;
         }
-
-        safe.Sort((a, b) =>
-            Vector2.Distance(a.Position * _tileSize, playerPos)
-                .CompareTo(Vector2.Distance(b.Position * _tileSize, playerPos)));
-
-        List<Room> chosen = new();
-
-        if (safe.Count >= clusterCount)
-        {
-            float bucketSize = (float)safe.Count / clusterCount;
-            for (int i = 0; i < clusterCount; i++)
-            {
-                int start = (int)(i * bucketSize);
-                int end   = (int)((i + 1) * bucketSize);
-                end = Math.Min(end, safe.Count);
-                if (start >= end) start = Math.Max(0, end - 1);
-                chosen.Add(safe[_random.Next(start, end)]);
-            }
-        }
-        else
-        {
-            chosen.AddRange(safe);
-            fallback.Sort((a, b) =>
-                Vector2.Distance(a.Position * _tileSize, playerPos)
-                    .CompareTo(Vector2.Distance(b.Position * _tileSize, playerPos)));
-
-            for (int i = fallback.Count - 1; i >= 0 && chosen.Count < clusterCount; i--)
-            {
-                if (!chosen.Contains(fallback[i]))
-                    chosen.Add(fallback[i]);
-            }
-        }
-
-        foreach (var room in chosen)
-            SpawnCluster(room, manager);
     }
 
-    private void SpawnCluster(Room room, EnemyManager manager)
+    private void SpawnInRoom(Room room, int count, EnemyManager manager)
     {
-        int count = _random.Next(2, 5);
-        int attempts = 0;
         int spawned = 0;
+        int attempts = 0;
 
-        while (spawned < count && attempts < count * 35)
+        while (spawned < count && attempts < count * 20)
         {
             attempts++;
-            float angle = (float)(_random.NextDouble() * Math.PI * 2);
-            
-            
-            float radius = (float)_random.NextDouble() * room.Radius;
-            Vector2 pos = (room.Position * _tileSize) + new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle)) * radius * _tileSize;
+            int tx = _random.Next(room.Bounds.X + 1, room.Bounds.X + room.Bounds.Width  - 1);
+            int ty = _random.Next(room.Bounds.Y + 1, room.Bounds.Y + room.Bounds.Height - 1);
 
-            int tx = (int)(pos.X / _tileSize);
-            int ty = (int)(pos.Y / _tileSize);
+            if (_grid[tx, ty].Type != TileType.Empty) continue;
 
-            if (tx < 0 || ty < 0 || tx >= _grid.GetLength(0) || ty >= _grid.GetLength(1)) continue;
+            Vector2 pos = new Vector2(tx * _tileSize + _tileSize / 2f, ty * _tileSize + _tileSize / 2f);
+            if (!IsFarFromOthers(pos, manager)) continue;
 
-            if (_grid[tx, ty].Type == TileType.Empty && IsFarFromOthers(pos, manager))
-            {
-                manager.AddEnemy(pos, EnemyType.Basic, GunData.EnemyRifle);
-                spawned++;
-            }
+            manager.AddEnemy(pos, EnemyType.Basic, GunData.EnemyRifle);
+            spawned++;
         }
+    }
+
+    private Room ClosestRoom(List<Room> rooms, Vector2 worldPos)
+    {
+        Room closest = rooms[0];
+        float best = float.MaxValue;
+        foreach (var r in rooms)
+        {
+            float d = Vector2.Distance(r.Center * _tileSize, worldPos);
+            if (d < best) { best = d; closest = r; }
+        }
+        return closest;
     }
 
     private bool IsFarFromOthers(Vector2 pos, EnemyManager manager)
     {
         foreach (var e in manager.Enemies)
-        {
-            if (Vector2.Distance(e.Position, pos) < 50f) return false;
-        }
+            if (Vector2.Distance(e.Position, pos) < 40f) return false;
         return true;
     }
 }

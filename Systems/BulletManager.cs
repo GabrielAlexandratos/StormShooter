@@ -10,6 +10,8 @@ public class BulletManager
     private readonly List<Bullet> _bullets = new();
 
     private const int TileSize = Settings.TileSize;
+    
+    public Random Rng { get; set; } = new();
 
     public void Spawn(Vector2 position, Vector2 velocity, float decay = 0f, float minSpeed = 0f, float scale = 1f, int bounces = 0)
     {
@@ -62,7 +64,7 @@ public class BulletManager
 
             b.Update(dt);
 
-            if (!b.IsAlive || b.IsOffscreen(virtualWidth * 20, virtualHeight * 20))
+            if (!b.IsAlive || b.IsBulletOffScreen(virtualWidth * 20, virtualHeight * 20))
             {
                 _bullets.RemoveAt(i);
                 continue;
@@ -93,6 +95,7 @@ public class BulletManager
                 float combinedRadius = 5f + b.HitRadius + b.Scale * 2.5f;
                 if (SweptCircleHit(frameStart, b.Position, player.Position, combinedRadius))
                 {
+                    player.Hit(b.Damage * 10f);
                     SpawnHitParticles(particles, random, player.Position,
                         b.Velocity.LengthSquared() > 0f ? Vector2.Normalize(b.Velocity) : Vector2.UnitX,
                         new Color(255, 200, 80));
@@ -140,6 +143,7 @@ public class BulletManager
                     }
 
                     SpawnHitParticles(particles, random, e.Position, dir, new Color(220, 30, 30));
+                    SoundManager.Play("humanhit1", 0.5f, (float)(Rng.NextDouble() - 0.5) * 0.3f);
 
                     bulletHit = true;
                     break;
@@ -155,40 +159,42 @@ public class BulletManager
 
     private static void SpawnDeathParticles(ParticleSystem particles, Random random, Vector2 pos)
     {
-        for (int j = 0; j < 6; j++)
+        for (int j = 0; j < 14; j++)
         {
-            float angle = random.NextSingle() * MathF.PI * 2f;
+            float angle = random.NextSingle() * MathF.PI * 1.4f;
+            float speed = 250f + random.NextSingle() * 400f;
             particles.Add(new Particle
             {
                 Position = pos,
-                Velocity = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * (150f + random.NextSingle() * 200f),
-                Life = 0.25f,
-                MaxLife = 0.35f,
-                Size = 8f,
+                Velocity = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * speed,
+                Life = 0.3f,
+                MaxLife = 0.45f,
+                Size = j < 4 ? 12f : 7f, // chunks + splatter
                 Rotation = angle,
-                Color = new Color(200, 40, 40),
-                Drag = 4f,
-                Gravity = 40f
+                Color = j % 3 == 0 ? new Color(255, 60, 60) : new Color(180, 20, 20),
+                Drag = 5f,
+                Gravity = 55f
             });
         }
     }
 
     private static void SpawnHitParticles(ParticleSystem particles, Random random, Vector2 pos, Vector2 dir, Color baseColor)
     {
-        for (int j = 0; j < 5 + random.Next(3); j++)
+        for (int j = 0; j < 8 + random.Next(4); j++)
         {
-            float angle = MathF.Atan2(dir.Y, dir.X) + (random.NextSingle() - 0.5f) * 1.8f;
+            float angle = MathF.Atan2(dir.Y, dir.X) + (random.NextSingle() - 0.5f) * 1.6f;
+            float speed = 220f + random.NextSingle() * 380f;
             particles.Add(new Particle
             {
                 Position = pos,
-                Velocity = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * (180f + random.NextSingle() * 320f),
-                Life = 0.2f,
-                MaxLife = 0.3f,
-                Size = 8f,
+                Velocity = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * speed,
+                Life = 0.18f,
+                MaxLife = 0.28f,
+                Size = j < 3 ? 10f : 6f,
                 Rotation = angle,
-                Color = j % 2 == 0 ? baseColor : new Color(255, 210, 80),
-                Drag = 6f,
-                Gravity = 60f
+                Color = j % 2 == 0 ? baseColor : new Color(255, 80, 80),
+                Drag = 7f,
+                Gravity = 70f
             });
         }
     }

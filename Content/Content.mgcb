@@ -13,6 +13,61 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin Sounds/pistolshot.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/pistolshot.wav
+
+#begin Sounds/akreload.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/akreload.wav
+
+#begin Sounds/dry_fire.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dry_fire.wav
+
+#begin Sounds/unload.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/unload.wav
+
+#begin Sounds/snowstep1.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/snowstep1.wav
+
+#begin Sounds/snowstep2.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/snowstep2.wav
+
+#begin Sounds/snowstep3.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/snowstep3.wav
+
+#begin Sounds/humanhit1.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/humanhit1.wav
+
+#begin Fonts/HudFont.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:Fonts/HudFont.spritefont
+
 #begin bullet.png
 /importer:TextureImporter
 /processor:TextureProcessor

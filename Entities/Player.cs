@@ -22,18 +22,31 @@ public class Player
     private AnimatedSprite _currentAnim;
     private bool _isMoving = false;
 
-    public Vector2 GunPos => _gunPos;
-    public float GunRotation => _gunRotation;
-    public float FinalRotation => _finalRotation;
-    public bool GunFlip => _gunFlip;
+    public int[] FootstepFrames = { 1, 4 };
+    public Action OnFootstep;
+
+    public float MaxHealth = 100f;
+    public float Health;
+    public float IFrameDuration = 0.8f;
+    private float _iFrameTimer;
+    private float _hitFlashTimer;
+    public bool IsAlive => Health > 0f;
+    public Action OnDeath;
 
     public Player(Vector2 startPos, float speed, Texture2D idleTexture, Texture2D walkTexture)
     {
         Position = startPos;
         _speed = speed;
+        Health = MaxHealth;
         _idleAnim = new AnimatedSprite(idleTexture, 2, 2f);
-        _walkAnim = new AnimatedSprite(walkTexture, 6, 10f);
+        _walkAnim = new AnimatedSprite(walkTexture, 6, 8f);
         _currentAnim = _idleAnim;
+
+        _walkAnim.OnFrameChanged += frame =>
+        {
+            if (_isMoving && Array.IndexOf(FootstepFrames, frame) >= 0)
+                OnFootstep?.Invoke();
+        };
     }
 
     public void Update(float dt, KeyboardState kb, Vector2 mouseWorld, Func<Vector2, bool> isWall)
@@ -70,6 +83,18 @@ public class Player
 
         _recoilOffset = Vector2.Lerp(_recoilOffset, Vector2.Zero, dt * _recoilRecoverSpeed);
         _recoilRotation = MathHelper.Lerp(_recoilRotation, 0f, dt * _recoilRecoverSpeed);
+
+        if (_iFrameTimer > 0f) _iFrameTimer -= dt;
+        if (_hitFlashTimer > 0f) _hitFlashTimer -= dt;
+    }
+
+    public void Hit(float damage)
+    {
+        if (_iFrameTimer > 0f || !IsAlive) return;
+        Health = Math.Max(0f, Health - damage);
+        _hitFlashTimer = 0.12f;
+        _iFrameTimer = IFrameDuration;
+        if (Health <= 0f) OnDeath?.Invoke();
     }
 
     public void ApplyRecoil(Vector2 direction, float strength, float randomRotation)
@@ -101,8 +126,16 @@ public class Player
         }
         
         Rectangle? sourceRect = _currentAnim.GetSourceRect();
-        
-        spriteBatch.Draw(_currentAnim.Texture, Position, sourceRect, Color.White, 0f, new Vector2(_currentAnim.FrameWidth / 2, _currentAnim.FrameHeight / 2), new Vector2(1f, 1f), _gunFlip ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0f);
+
+        Color spriteColor;
+        if (_hitFlashTimer > 0f)
+            spriteColor = Color.Red;
+        else if (_iFrameTimer > 0f)
+            spriteColor = Color.White * (MathF.Sin(_iFrameTimer * 40f) > 0f ? 1f : 0.3f);
+        else
+            spriteColor = Color.White;
+
+        spriteBatch.Draw(_currentAnim.Texture, Position, sourceRect, spriteColor, 0f, new Vector2(_currentAnim.FrameWidth / 2, _currentAnim.FrameHeight / 2), new Vector2(1f, 1f), _gunFlip ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0f);
    }
     
     public Vector2 GetMuzzleWorld(Gun gun)

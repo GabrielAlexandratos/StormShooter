@@ -17,9 +17,13 @@ public class EnemyManager
     public LightingRenderer Lighting  { get; set; }
     public Random Rng { get; set; } = new();
 
+    public event Action<Vector2, Gun, int> OnEnemyDropped;
+
+    private const float DropChance = 0.55f;
+
     private readonly Gun _enemyGun = GunData.EnemyRifle;
 
-    private bool HasLOS(Vector2 a, Vector2 b)
+    private bool HasLineOfSight(Vector2 a, Vector2 b)
     {
         Vector2 dir = b - a;
         float len = dir.Length();
@@ -34,16 +38,10 @@ public class EnemyManager
         return true;
     }
 
-    public void Add(Enemy enemy)
-    {
-        enemy.InitAI(Rng, IsWall, HasLOS);
-        Enemies.Add(enemy);
-    }
-
     public void AddEnemy(Vector2 position, EnemyType type = EnemyType.Basic, Gun gun = null)
     {
         var e = new Enemy { Position = position, Gun = gun ?? _enemyGun };
-        e.InitAI(Rng, IsWall, HasLOS);
+        e.InitAI(Rng, IsWall, HasLineOfSight);
         Enemies.Add(e);
     }
 
@@ -55,12 +53,22 @@ public class EnemyManager
             e.UpdateAI(dt, playerPos, (muzzlePos, dir, spread) =>
             {
                 if (Bullets == null) return;
-                float   angle = MathF.Atan2(dir.Y, dir.X) + spread;
+                float angle = MathF.Atan2(dir.Y, dir.X) + spread;
                 Vector2 fired = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
                 Bullets.FireEnemyBullet(muzzlePos, fired, e.Gun, Rng);
             });
             lighting?.AddLight(new LightSource(e.Position, 45f, Color.White * 1.5f, 0.15f));
         }
+        foreach (var e in Enemies)
+        {
+            if (e.IsDead())
+            {
+                SoundManager.Play("humanhit1", 1f, (float)(Rng.NextDouble() - 0.5) * 0.5f);
+                if (Rng.NextDouble() < DropChance)
+                    OnEnemyDropped?.Invoke(e.Position, e.Gun, DroppedGun.RollDropAmmo(Rng));
+            }
+        }
+
         Enemies.RemoveAll(e => e.IsDead());
     }
 

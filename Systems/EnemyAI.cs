@@ -6,34 +6,44 @@ namespace StormShooter;
 
 public enum EnemyState
 {
-    Patrol,
-    Alert,
-    Engage,
-    Reposition,
+    Patrol, // hasn't seen the player
+    Alert, // noticed the player
+    Engage, // moving to position to fight the player
+    WindUp, // stop and telegraph before shooting
+    Recover, // retreat to reposition
+    Reposition, // reposition
 }
 
 public class EnemyAI
 {
-    private const float DetectRadius = 200f;
-    private const float PreferredRange = 100f;
-    private const float RangeDeadzone = 20f;
-    private const float OrbitSpeed = 30f;
-    private const float PatrolSpeed = 28f;
-    private const float AlertSpeed = 30f;
-    private const float RepositionSpeed = 40f;
-    private const float ShootInterval = 1.1f;
-    private const float ShootIntervalRand = 0.3f;
-    private const float AccuracySpread = 0.08f;
-
-    // burst fallback values
-    private int GunBurstCount => _enemy.Gun.BurstCount > 1 ? _enemy.Gun.BurstCount : 3;
-    private float GunBurstDelay => _enemy.Gun.BurstDelay > 0f ? _enemy.Gun.BurstDelay : 0.12f;
-    private const float OrbitFlipInterval = 1.4f;
+    // Movement
+    private const float DetectRadius       = 250f;
+    private const float PreferredRange = 90f;
+    private const float RangeDeadzone = 18f;
+    private const float OrbitSpeed = 40f;
+    private const float PatrolSpeed = 25f;
+    private const float AlertSpeed = 38f;
+    private const float RepositionSpeed = 45f;
+    private const float OrbitFlipInterval = 2f;
     private const float PatrolWaypointDist = 8f;
-    private const float AlertLoseTime = 6f;
+    private const float AlertLoseTime      = 5f;
     private const float LowHealthThreshold = 2f;
 
+    // Shooting
+    private const float ShootInterval    = 1.8f;   // pause between attacks while orbiting
+    private const float ShootIntervalRand= 0.5f;
+    private const float WindUpDuration   = 0.55f;  // how long the telegraph lasts
+    private const float RecoverDuration  = 1.0f;   // how long the post-burst retreat lasts
+    private const int   BurstShotCount   = 3;      // shots per attack
+    private const float BurstShotDelay   = 0.10f;  // delay between shots in the burst
+    private const float AccuracySpread   = 0.20f;  // aim jitter — higher = less accurate at range
+
+    // Aim tracking speeds
+    private const float AimLerpOrbit  = 5f;   // slow tracking while orbiting
+    private const float AimLerpWindUp = 14f;  // fast lock-on during wind-up
+
     public EnemyState State { get; private set; } = EnemyState.Patrol;
+    public float AimAngle { get; private set; }
 
     private readonly Enemy _enemy;
     private readonly Random _rng;
@@ -41,25 +51,20 @@ public class EnemyAI
     private readonly Func<Vector2, Vector2, bool> _hasLOS;
 
     private Vector2 _patrolWaypoint;
-    private float _patrolWaypointTimer;
+    private float   _patrolWaypointTimer;
     private Vector2 _lastKnownPlayerPos;
-    private float _losLostTimer;
-    private int _orbitSign = 1;
-    private float _orbitFlipTimer;
-    private float _shootTimer;
-    private int _burstRemaining;
-    private float _burstTimer;
+    private float   _losLostTimer;
+    private int     _orbitSign = 1;
+    private float   _orbitFlipTimer;
+    private float   _shootTimer;
+    private float   _windUpTimer;
+    private float   _recoverTimer;
+    private int     _burstRemaining;
+    private float   _burstShotTimer;
     private Vector2 _repositionTarget;
-    private float _repositionTimeout;
-
-    // automatic firing gun vars
-    private float _autoFireTimeRemaining;
-    private float _autoFireShotTimer;
-    private const float AutoFireDuration = 0.6f;
-    private const float AutoFireDurationRand = 0.1f;
-    private const float BetweenBurstPause = 1.2f;
-
-    public float AimAngle { get; private set; }
+    private float   _repositionTimeout;
+    private Vector2 _lastCheckedPos;
+    private float   _stuckTimer;
 
     public EnemyAI(Enemy enemy, Random rng, Func<Vector2, bool> isWall, Func<Vector2, Vector2, bool> hasLOS)
     {
@@ -67,52 +72,102 @@ public class EnemyAI
         _rng = rng;
         _isWall = isWall;
         _hasLOS = hasLOS;
-        _shootTimer = ShootInterval + (float)(_rng.NextDouble() * ShootIntervalRand);
         _patrolWaypoint = enemy.Position;
+        _shootTimer = ShootInterval + (float)(_rng.NextDouble() * ShootIntervalRand);
     }
 
     public void Update(float dt, Vector2 playerPos, Action<Vector2, Vector2, float> fireCallback)
     {
         float distToPlayer = Vector2.Distance(_enemy.Position, playerPos);
         bool inRadius = distToPlayer < DetectRadius;
-        
-        bool hasLOS = inRadius && _hasLOS(_enemy.Position, playerPos);
+        bool hasLineOfSight = inRadius && _hasLOS(_enemy.Position, playerPos);
 
+        // aim at the player as long as they are not patrolling
         if (State != EnemyState.Patrol)
         {
             Vector2 toPlayer = playerPos - _enemy.Position;
             if (toPlayer.LengthSquared() > 0.01f)
-                AimAngle = LerpAngle(AimAngle, MathF.Atan2(toPlayer.Y, toPlayer.X), dt * 10f);
+            {
+                float lerpSpeed = State == EnemyState.WindUp ? AimLerpWindUp : AimLerpOrbit;
+                AimAngle = LerpAngle(AimAngle, MathF.Atan2(toPlayer.Y, toPlayer.X), dt * lerpSpeed);
+            }
         }
 
+        UpdateTransitions(dt, playerPos, hasLineOfSight, fireCallback);
+        UpdateBehavior(dt, playerPos, fireCallback, hasLineOfSight);
+    }
+
+    private void UpdateTransitions(float dt, Vector2 playerPos, bool hasLineOfSight, Action<Vector2, Vector2, float> fireCallback)
+    {
         switch (State)
         {
             case EnemyState.Patrol:
-                if (hasLOS) { _lastKnownPlayerPos = playerPos; TransitionTo(EnemyState.Alert); }
+                if (hasLineOfSight) { _lastKnownPlayerPos = playerPos; TransitionTo(EnemyState.Alert); }
                 break;
 
             case EnemyState.Alert:
-                if (hasLOS) { _lastKnownPlayerPos = playerPos; TransitionTo(EnemyState.Engage); }
+                if (hasLineOfSight) { _lastKnownPlayerPos = playerPos; TransitionTo(EnemyState.Engage); }
                 else { _losLostTimer += dt; if (_losLostTimer > AlertLoseTime) TransitionTo(EnemyState.Patrol); }
                 break;
 
             case EnemyState.Engage:
-                if (hasLOS) { _lastKnownPlayerPos = playerPos; _losLostTimer = 0f; }
-                else { _losLostTimer += dt; if (_losLostTimer > 0.3f) TransitionTo(EnemyState.Reposition); }
+                if (hasLineOfSight) { _lastKnownPlayerPos = playerPos; _losLostTimer = 0f; }
+                else { _losLostTimer += dt; if (_losLostTimer > 0.4f) TransitionTo(EnemyState.Reposition); break; }
+                _shootTimer -= dt;
+                if (_shootTimer <= 0f) TransitionTo(EnemyState.WindUp);
+                break;
+
+            case EnemyState.WindUp:
+                if (!hasLineOfSight) { TransitionTo(EnemyState.Reposition); break; }
+                _lastKnownPlayerPos = playerPos;
+                _windUpTimer -= dt;
+                if (_windUpTimer <= 0f)
+                {
+                    FireOneShot(playerPos, fireCallback);
+                    _burstRemaining = BurstShotCount - 1;
+                    _burstShotTimer = BurstShotDelay;
+                    TransitionTo(EnemyState.Recover);
+                }
+                break;
+
+            case EnemyState.Recover:
+                if (hasLineOfSight) _lastKnownPlayerPos = playerPos;
+                if (_burstRemaining > 0)
+                {
+                    _burstShotTimer -= dt;
+                    if (_burstShotTimer <= 0f)
+                    {
+                        FireOneShot(playerPos, fireCallback);
+                        _burstRemaining--;
+                        _burstShotTimer = BurstShotDelay;
+                    }
+                }
+                _recoverTimer -= dt;
+                if (_recoverTimer <= 0f)
+                {
+                    _shootTimer = ShootInterval + (float)((_rng.NextDouble() - 0.5) * ShootIntervalRand);
+                    TransitionTo(EnemyState.Engage);
+                }
                 break;
 
             case EnemyState.Reposition:
-                if (hasLOS) TransitionTo(EnemyState.Engage);
-                else if (_repositionTimeout <= 0f) TransitionTo(EnemyState.Alert);
+                if (hasLineOfSight) { TransitionTo(EnemyState.Engage); break; }
+                _repositionTimeout -= dt;
+                if (_repositionTimeout <= 0f) TransitionTo(EnemyState.Alert);
                 break;
         }
+    }
 
+    private void UpdateBehavior(float dt, Vector2 playerPos, Action<Vector2, Vector2, float> fireCallback, bool hasLOS)
+    {
         switch (State)
         {
             case EnemyState.Patrol: UpdatePatrol(dt); break;
-            case EnemyState.Alert: UpdateAlert(dt, playerPos); break;
-            case EnemyState.Engage: UpdateEngage(dt, playerPos, fireCallback, hasLOS); break;
-            case EnemyState.Reposition: UpdateReposition(dt, playerPos, fireCallback, hasLOS); break;
+            case EnemyState.Alert: UpdateAlert(dt); break;
+            case EnemyState.Engage: UpdateEngage(dt, playerPos); break;
+            case EnemyState.WindUp: UpdateWindUp(dt, playerPos); break;
+            case EnemyState.Recover: UpdateRecover(dt, playerPos); break;
+            case EnemyState.Reposition: UpdateReposition(dt); break;
         }
     }
 
@@ -124,14 +179,73 @@ public class EnemyAI
         MoveToward(_patrolWaypoint, PatrolSpeed, dt);
     }
 
+    private void UpdateAlert(float dt)
+    {
+        if (Vector2.Distance(_enemy.Position, _lastKnownPlayerPos) > PatrolWaypointDist)
+            MoveToward(_lastKnownPlayerPos, AlertSpeed, dt);
+    }
+
+    private void UpdateEngage(float dt, Vector2 playerPos)
+    {
+        _orbitFlipTimer -= dt;
+        if (_orbitFlipTimer <= 0f)
+        {
+            _orbitSign = _rng.Next(2) == 0 ? 1 : -1;
+            _orbitFlipTimer = OrbitFlipInterval + (float)(_rng.NextDouble() * 1.2f);
+        }
+
+        Vector2 toPlayer = playerPos - _enemy.Position;
+        if (toPlayer.LengthSquared() > 0.001f) toPlayer.Normalize();
+
+        Vector2 tangent = new Vector2(-toPlayer.Y, toPlayer.X) * _orbitSign;
+        float dist = Vector2.Distance(_enemy.Position, playerPos);
+        float radialBias = dist < PreferredRange - RangeDeadzone ? -1f
+                         : dist > PreferredRange + RangeDeadzone ?  1f : 0f;
+
+        Vector2 moveDir = tangent + toPlayer * (radialBias * 0.6f);
+        if (moveDir.LengthSquared() > 0.001f) moveDir.Normalize();
+
+        MoveWithDir(moveDir, OrbitSpeed * (_enemy.Health <= LowHealthThreshold ? 1.35f : 1f), dt);
+    }
+
+    private void UpdateWindUp(float dt, Vector2 playerPos)
+    {
+        // slow down mostly when shooting 
+        float dist = Vector2.Distance(_enemy.Position, playerPos);
+        if (dist > PreferredRange + RangeDeadzone)
+        {
+            Vector2 toPlayer = playerPos - _enemy.Position;
+            if (toPlayer.LengthSquared() > 0.001f) toPlayer.Normalize();
+            MoveWithDir(toPlayer, OrbitSpeed * 0.2f, dt);
+        }
+    }
+
+    private void UpdateRecover(float dt, Vector2 playerPos)
+    {
+        // Retreat away from player after shooting
+        Vector2 toPlayer = playerPos - _enemy.Position;
+        if (toPlayer.LengthSquared() > 0.001f) toPlayer.Normalize();
+        Vector2 tangent = new Vector2(-toPlayer.Y, toPlayer.X) * _orbitSign;
+        Vector2 retreat = -toPlayer * 0.7f + tangent;
+        if (retreat.LengthSquared() > 0.001f) retreat.Normalize();
+        MoveWithDir(retreat, OrbitSpeed * 0.9f, dt);
+    }
+
+    private void UpdateReposition(float dt)
+    {
+        if (Vector2.Distance(_enemy.Position, _repositionTarget) > PatrolWaypointDist)
+            MoveToward(_repositionTarget, RepositionSpeed, dt);
+        else
+            PickRepositionTarget(_lastKnownPlayerPos);
+    }
+
     private void PickNewPatrolWaypoint()
     {
         for (int i = 0; i < 20; i++)
         {
-            float angle = (float)(_rng.NextDouble() * MathF.Tau);
+            float angle  = (float)(_rng.NextDouble() * MathF.Tau);
             float radius = 32f + (float)(_rng.NextDouble() * 64f);
             Vector2 candidate = _enemy.Position + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius;
-
             if (!_isWall(candidate) && _hasLOS(_enemy.Position, candidate))
             {
                 _patrolWaypoint = candidate;
@@ -142,48 +256,6 @@ public class EnemyAI
         _patrolWaypointTimer = 1.5f;
     }
 
-    private void UpdateAlert(float dt, Vector2 playerPos)
-    {
-        if (Vector2.Distance(_enemy.Position, _lastKnownPlayerPos) > PatrolWaypointDist)
-            MoveToward(_lastKnownPlayerPos, AlertSpeed, dt);
-    }
-
-    private void UpdateEngage(float dt, Vector2 playerPos, Action<Vector2, Vector2, float> fireCallback, bool hasLOS)
-    {
-        float dist = Vector2.Distance(_enemy.Position, playerPos);
-
-        _orbitFlipTimer -= dt;
-        if (_orbitFlipTimer <= 0f)
-        {
-            _orbitSign = _rng.Next(2) == 0 ? 1 : -1;
-            _orbitFlipTimer = OrbitFlipInterval + (float)(_rng.NextDouble() * 1.5f);
-        }
-
-        Vector2 toPlayer = playerPos - _enemy.Position;
-        if (toPlayer.LengthSquared() > 0.001f) toPlayer.Normalize();
-
-        Vector2 tangent = new Vector2(-toPlayer.Y, toPlayer.X) * _orbitSign;
-        float radialBias = dist < PreferredRange - RangeDeadzone ? -1f : dist > PreferredRange + RangeDeadzone ? 1f : 0f;
-
-        Vector2 moveDir = tangent + toPlayer * (radialBias * 0.6f);
-        if (moveDir.LengthSquared() > 0.001f) moveDir.Normalize();
-
-        MoveWithDir(moveDir, OrbitSpeed * (_enemy.Health <= LowHealthThreshold ? 1.35f : 1f), dt);
-        UpdateShooting(dt, playerPos, fireCallback, hasLOS);
-    }
-
-    private void UpdateReposition(float dt, Vector2 playerPos, Action<Vector2, Vector2, float> fireCallback, bool hasLOS)
-    {
-        _repositionTimeout -= dt;
-        if (Vector2.Distance(_enemy.Position, _repositionTarget) > PatrolWaypointDist)
-            MoveToward(_repositionTarget, RepositionSpeed, dt);
-        else
-            PickRepositionTarget(playerPos);
-        
-        bool suppressFire = Vector2.Distance(_enemy.Position, _lastKnownPlayerPos) < DetectRadius * 0.7f;
-        UpdateShooting(dt, playerPos, fireCallback, hasLOS);
-    }
-
     private void PickRepositionTarget(Vector2 playerPos)
     {
         Vector2 toPlayer = playerPos - _enemy.Position;
@@ -191,15 +263,14 @@ public class EnemyAI
 
         for (int i = 0; i < 16; i++)
         {
-            float angle = baseAngle + MathF.PI + (float)((_rng.NextDouble() * MathF.PI) - MathF.PI * 0.5f);
+            float angle  = baseAngle + MathF.PI + (float)((_rng.NextDouble() * MathF.PI) - MathF.PI * 0.5f);
             float radius = 70f + (float)(_rng.NextDouble() * 50f);
             Vector2 candidate = playerPos + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius;
-
-            if (!_isWall(candidate) && _hasLOS(_enemy.Position, candidate)) 
-            { 
-                _repositionTarget = candidate; 
-                _repositionTimeout = 3f; 
-                return; 
+            if (!_isWall(candidate) && _hasLOS(_enemy.Position, candidate))
+            {
+                _repositionTarget = candidate;
+                _repositionTimeout = 3f;
+                return;
             }
         }
 
@@ -209,106 +280,33 @@ public class EnemyAI
         _repositionTimeout = 2f;
     }
 
-    private void UpdateShooting(float dt, Vector2 playerPos, Action<Vector2, Vector2, float> fireCallback, bool hasLOS)
-    {
-        if (!hasLOS) return;
-
-        bool aimed = IsAimedAtPlayer(playerPos);
-
-        if (_enemy.Gun.Automatic)
-        {
-            UpdateAutoShooting(dt, playerPos, fireCallback, aimed);
-        }
-        else
-        {
-            UpdateBurstShooting(dt, playerPos, fireCallback, aimed);
-        }
-    }
-
-    private bool IsAimedAtPlayer(Vector2 playerPos)
-    {
-        Vector2 toPlayer = playerPos - _enemy.Position;
-        float angleToPlayer = MathF.Atan2(toPlayer.Y, toPlayer.X);
-        float angleDiff = Math.Abs(((angleToPlayer - AimAngle + MathF.PI * 3) % (MathF.PI * 2)) - MathF.PI);
-        return angleDiff < 0.4f;
-    }
-
-    private void UpdateAutoShooting(float dt, Vector2 playerPos, Action<Vector2, Vector2, float> fireCallback, bool aimed)
-    {
-        if (_autoFireTimeRemaining > 0f)
-        {
-            // Currently holding the trigger
-            _autoFireShotTimer -= dt;
-            if (_autoFireShotTimer <= 0f && aimed)
-            {
-                FireOneShot(playerPos, fireCallback);
-                float fireInterval = _enemy.Gun.FireRate > 0f ? 1f / _enemy.Gun.FireRate : 0.1f;
-                _autoFireShotTimer = fireInterval;
-            }
-
-            _autoFireTimeRemaining -= dt;
-            return;
-        }
-
-        _shootTimer -= dt;
-        if (_shootTimer <= 0f)
-        {
-            float mult = _enemy.Health <= LowHealthThreshold ? 0.65f : 1f;
-            float pause = (BetweenBurstPause + (float)((_rng.NextDouble() - 0.5) * ShootIntervalRand)) * mult;
-            _shootTimer = pause;
-            _autoFireTimeRemaining = AutoFireDuration + (float)(_rng.NextDouble() * AutoFireDurationRand);
-            _autoFireShotTimer = 0f; // fire immediately on first frame
-        }
-    }
-
-    private void UpdateBurstShooting(float dt, Vector2 playerPos, Action<Vector2, Vector2, float> fireCallback, bool aimed)
-    {
-        if (_burstRemaining > 0)
-        {
-            _burstTimer -= dt;
-            if (_burstTimer <= 0f && aimed)
-            {
-                FireOneShot(playerPos, fireCallback);
-                _burstRemaining--;
-                _burstTimer = GunBurstDelay;
-            }
-            return;
-        }
-
-        _shootTimer -= dt;
-        if (_shootTimer <= 0f)
-        {
-            float mult = _enemy.Health <= LowHealthThreshold ? 0.65f : 1f;
-            _shootTimer = (ShootInterval + (float)((_rng.NextDouble() - 0.5) * ShootIntervalRand)) * mult;
-            _burstRemaining = GunBurstCount + (_enemy.Health <= LowHealthThreshold ? 1 : 0);
-            _burstTimer = GunBurstDelay;
-        }
-    }
-
     private void FireOneShot(Vector2 playerPos, Action<Vector2, Vector2, float> fireCallback)
     {
-        Vector2 dir = new Vector2(MathF.Cos(AimAngle), MathF.Sin(AimAngle));
-
         Gun gun = _enemy.Gun;
         int pellets = Math.Max(1, gun.BulletsPerShot);
-        
         float aimJitter = (_rng.NextSingle() - 0.5f) * AccuracySpread * 2f;
 
         for (int i = 0; i < pellets; i++)
         {
             float t = pellets == 1 ? 0.5f : (float)i / (pellets - 1);
-            float pelletSpread = MathHelper.Lerp(-gun.SpreadAngle / 2f, gun.SpreadAngle / 2f, t)
-                               + (_rng.NextSingle() - 0.5f) * gun.SpreadAngle
-                               + aimJitter;
-            fireCallback?.Invoke(_enemy.Position, dir, pelletSpread);
+            float spread = MathHelper.Lerp(-gun.SpreadAngle / 2f, gun.SpreadAngle / 2f, t)
+                         + (_rng.NextSingle() - 0.5f) * gun.SpreadAngle
+                         + aimJitter;
+            fireCallback?.Invoke(_enemy.Position, new Vector2(MathF.Cos(AimAngle), MathF.Sin(AimAngle)), spread);
         }
     }
 
     private void TransitionTo(EnemyState next)
     {
-        if (next == EnemyState.Reposition) PickRepositionTarget(_lastKnownPlayerPos);
-        if (next == EnemyState.Patrol) { _losLostTimer = 0f; PickNewPatrolWaypoint(); }
-        if (next == EnemyState.Alert) _losLostTimer = 0f;
+        switch (next)
+        {
+            case EnemyState.WindUp:     _windUpTimer = WindUpDuration; break;
+            case EnemyState.Recover:    _recoverTimer = RecoverDuration; break;
+            case EnemyState.Reposition: PickRepositionTarget(_lastKnownPlayerPos); break;
+            case EnemyState.Patrol:     _losLostTimer = 0f; PickNewPatrolWaypoint(); break;
+            case EnemyState.Alert:      _losLostTimer = 0f; break;
+            case EnemyState.Engage:     _losLostTimer = 0f; break;
+        }
         State = next;
     }
 
@@ -322,13 +320,11 @@ public class EnemyAI
 
     private void MoveWithDir(Vector2 dir, float speed, float dt)
     {
-        Vector2 avoidAmount = GetAvoidVector(dir);
+        Vector2 avoid = GetAvoidVector(dir);
+        Vector2 finalDir = dir + avoid * 1.5f;
+        if (finalDir != Vector2.Zero) finalDir.Normalize();
 
-        Vector2 finalDirection = dir + avoidAmount * 1.5f;
-        if (finalDirection != Vector2.Zero) finalDirection.Normalize();
-
-        Vector2 delta = finalDirection * speed * dt;
-
+        Vector2 delta = finalDir * speed * dt;
         float radius = _enemy.Radius;
         Vector2 checkPos = _enemy.Position + Vector2.Normalize(delta) * (delta.Length() + radius);
 
@@ -338,20 +334,28 @@ public class EnemyAI
 
     private Vector2 GetAvoidVector(Vector2 checkDir)
     {
-        Vector2 avoidAmount = Vector2.Zero;
-        float checkDistance = 25f;
-
+        Vector2 avoid = Vector2.Zero;
         float angle = MathF.Atan2(checkDir.Y, checkDir.X);
-        Vector2 leftCheck = new Vector2(MathF.Cos(angle - 0.7f), MathF.Sin(angle - 0.7f)) * checkDistance;
-        Vector2 rightCheck = new Vector2(MathF.Cos(angle + 0.7f), MathF.Sin(angle + 0.7f)) * checkDistance;
 
-        bool leftHit = _isWall(_enemy.Position + leftCheck);
-        bool rightHit = _isWall(_enemy.Position + rightCheck);
+        // use whiskers to try and avoid walls
+        bool leftHit  = _isWall(_enemy.Position + new Vector2(MathF.Cos(angle - 0.65f), MathF.Sin(angle - 0.65f)) * 32f);
+        bool rightHit = _isWall(_enemy.Position + new Vector2(MathF.Cos(angle + 0.65f), MathF.Sin(angle + 0.65f)) * 32f);
+        bool frontHit = _isWall(_enemy.Position + new Vector2(MathF.Cos(angle),         MathF.Sin(angle))         * 28f);
 
-        if (leftHit) avoidAmount += new Vector2(checkDir.Y, -checkDir.X);
-        if (rightHit) avoidAmount += new Vector2(-checkDir.Y, checkDir.X);
+        if (leftHit)  avoid += new Vector2( checkDir.Y, -checkDir.X);
+        if (rightHit) avoid += new Vector2(-checkDir.Y,  checkDir.X);
+        if (frontHit && !leftHit && !rightHit) // dont run straight into a wall
+            avoid += _orbitSign > 0 ? new Vector2(-checkDir.Y, checkDir.X) : new Vector2(checkDir.Y, -checkDir.X);
 
-        return avoidAmount;
+        // prefer to move away from walls
+        Vector2[] cardinals = { Vector2.UnitX, -Vector2.UnitX, Vector2.UnitY, -Vector2.UnitY };
+        foreach (var c in cardinals)
+        {
+            if (_isWall(_enemy.Position + c * 18f))
+                avoid -= c * 1.2f;
+        }
+
+        return avoid;
     }
 
     private static float LerpAngle(float from, float to, float t)

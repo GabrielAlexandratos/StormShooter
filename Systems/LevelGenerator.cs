@@ -10,205 +10,181 @@ public class LevelGenerator
     private int _height;
     private Random _rng;
 
-    private const int TILE_SIZE = 16;
-
-    private const float ChanceChangeDir = 0.4f;
-    private const float ChanceSpawn = 0.03f;
-    private const float ChanceDestroy = 0.10f;
-    private const int MaxWalkers = 6;
-    private const float PercentToFill = 0.350f;
-
     public List<Room> Rooms { get; private set; } = new();
-    public List<SpawnPoint> SpawnPoints = new();
 
     public TileType[,] Generate(int width, int height, int seed = -1)
     {
         _width = width;
         _height = height;
         _rng = seed == -1 ? new Random() : new Random(seed);
+        Rooms.Clear();
 
         var grid = new TileType[width, height];
-
         for (int x = 0; x < width; x++)
             for (int y = 0; y < height; y++)
                 grid[x, y] = TileType.Wall;
 
-        CarveFloors(grid);
-        BuildRoomsFromFloors(grid);
-        BuildSpawnPoints(grid);
+        PlaceRooms();
+        ConnectRooms(grid);
+        CarveRooms(grid);
+        ErodeEdges(grid);
 
         return grid;
     }
-    
-    private struct Walker
+
+    private void PlaceRooms()
     {
-        public Vector2 Pos;
-        public Vector2 Dir;
+        const int padding = 2;
+        const int maxRooms = 8;
+
+        for (int attempt = 0; attempt < 300 && Rooms.Count < maxRooms; attempt++)
+        {
+            int w = _rng.Next(5, 12);
+            int h = _rng.Next(4, 9);
+            int x = _rng.Next(2, _width  - w - 2);
+            int y = _rng.Next(2, _height - h - 2);
+
+            var candidate = new Rectangle(x, y, w, h);
+            bool overlaps = false;
+
+            foreach (var room in Rooms)
+            {
+                var padded = new Rectangle(
+                    room.Bounds.X - padding,
+                    room.Bounds.Y - padding,
+                    room.Bounds.Width  + padding * 2,
+                    room.Bounds.Height + padding * 2);
+
+                if (padded.Intersects(candidate)) { overlaps = true; break; }
+            }
+
+            if (!overlaps)
+                Rooms.Add(new Room { Bounds = candidate });
+        }
     }
 
-    private void CarveFloors(TileType[,] grid)
+    private void ConnectRooms(TileType[,] grid)
     {
-        var walkers = new List<Walker>();
+        if (Rooms.Count < 2) return;
 
-        walkers.Add(new Walker
+        // cheeky minimum spanning tree
+        var connected = new HashSet<int> { 0 };
+
+        while (connected.Count < Rooms.Count)
         {
-            Pos = new Vector2(_width / 2f, _height / 2f),
-            Dir = RandomDir()
-        });
+            int bestFrom = -1, bestTo = -1;
+            float bestDist = float.MaxValue;
 
-        int iterations = 0;
-        int maxIterations = 100_000;
-
-        do
-        {
-            foreach (var w in walkers)
-                grid[(int)w.Pos.X, (int)w.Pos.Y] = TileType.Empty;
-
-            int checks = walkers.Count;
-            for (int i = 0; i < checks; i++)
+            foreach (int i in connected)
             {
-                if (walkers.Count > 1 && _rng.NextDouble() < ChanceDestroy)
+                for (int j = 0; j < Rooms.Count; j++)
                 {
-                    walkers.RemoveAt(i);
-                    break;
+                    if (connected.Contains(j)) continue;
+                    float d = Vector2.Distance(Rooms[i].Center, Rooms[j].Center);
+                    if (d < bestDist) { bestDist = d; bestFrom = i; bestTo = j; }
                 }
             }
-            
-            for (int i = 0; i < walkers.Count; i++)
-            {
-                if (_rng.NextDouble() < ChanceChangeDir)
-                {
-                    var w = walkers[i];
-                    w.Dir = RandomDir();
-                    walkers[i] = w;
-                }
-            }
 
-            checks = walkers.Count;
-            for (int i = 0; i < checks; i++)
-            {
-                if (walkers.Count < MaxWalkers && _rng.NextDouble() < ChanceSpawn)
-                {
-                    walkers.Add(new Walker { Pos = walkers[i].Pos, Dir = RandomDir() });
-                }
-            }
+            Rooms[bestFrom].Connections.Add(Rooms[bestTo]);
+            Rooms[bestTo].Connections.Add(Rooms[bestFrom]);
+            CarveCorridor(grid, Rooms[bestFrom].Center, Rooms[bestTo].Center);
+            connected.Add(bestTo);
+        }
 
-            for (int i = 0; i < walkers.Count; i++)
-            {
-                var w = walkers[i];
-                w.Pos += w.Dir;
-                
-                w.Pos.X = MathHelper.Clamp(w.Pos.X, 1, _width  - 2);
-                w.Pos.Y = MathHelper.Clamp(w.Pos.Y, 1, _height - 2);
-                walkers[i] = w;
-            }
-
-            iterations++;
-
-            if (FloorFraction(grid) >= PercentToFill)
-                break;
-
-        } while (iterations < maxIterations);
-    }
-
-    private Vector2 RandomDir()
-    {
-        return (_rng.Next(4)) switch
+        // Add a couple of extra connections to create loops
+        int extras = _rng.Next(1, 3);
+        for (int i = 0; i < extras; i++)
         {
-            0 => new Vector2( 0, -1),
-            1 => new Vector2( 0,  1),
-            2 => new Vector2(-1,  0),
-            _ => new Vector2( 1,  0),
-        };
+            int a = _rng.Next(Rooms.Count);
+            int b = _rng.Next(Rooms.Count);
+            if (a == b || Rooms[a].Connections.Contains(Rooms[b])) continue;
+            Rooms[a].Connections.Add(Rooms[b]);
+            Rooms[b].Connections.Add(Rooms[a]);
+            CarveCorridor(grid, Rooms[a].Center, Rooms[b].Center);
+        }
     }
 
-    private float FloorFraction(TileType[,] grid)
+    private void CarveCorridor(TileType[,] grid, Vector2 from, Vector2 to)
     {
-        int count = 0;
-        foreach (var t in grid)
-            if (t == TileType.Empty) count++;
-        return (float)count / grid.Length;
+        int x1 = (int)from.X, y1 = (int)from.Y;
+        int x2 = (int)to.X,   y2 = (int)to.Y;
+        const int w = 2;
+
+        if (_rng.NextDouble() < 0.5)
+        {
+            CarveHLine(grid, y1, Math.Min(x1, x2), Math.Max(x1, x2), w);
+            CarveVLine(grid, x2, Math.Min(y1, y2), Math.Max(y1, y2), w);
+        }
+        else
+        {
+            CarveVLine(grid, x1, Math.Min(y1, y2), Math.Max(y1, y2), w);
+            CarveHLine(grid, y2, Math.Min(x1, x2), Math.Max(x1, x2), w);
+        }
     }
-    
-    private void BuildRoomsFromFloors(TileType[,] grid)
+
+    private void CarveHLine(TileType[,] grid, int y, int x1, int x2, int width)
     {
-        Rooms.Clear();
-        var visited = new bool[_width, _height];
+        for (int x = x1; x <= x2; x++)
+            for (int dy = 0; dy < width; dy++)
+                SetFloor(grid, x, y + dy);
+    }
+
+    private void CarveVLine(TileType[,] grid, int x, int y1, int y2, int width)
+    {
+        for (int y = y1; y <= y2; y++)
+            for (int dx = 0; dx < width; dx++)
+                SetFloor(grid, x + dx, y);
+    }
+
+    private void CarveRooms(TileType[,] grid)
+    {
+        foreach (var room in Rooms)
+            for (int x = room.Bounds.X; x < room.Bounds.X + room.Bounds.Width; x++)
+                for (int y = room.Bounds.Y; y < room.Bounds.Y + room.Bounds.Height; y++)
+                    SetFloor(grid, x, y);
+    }
+
+    // Randomly removes wall tiles with many floor neighbours to like soften corners and make it feel more natural
+    private void ErodeEdges(TileType[,] grid)
+    {
+        var toErode = new List<(int x, int y)>();
 
         for (int x = 1; x < _width - 1; x++)
         {
             for (int y = 1; y < _height - 1; y++)
             {
-                if (grid[x, y] != TileType.Empty || visited[x, y]) continue;
+                if (grid[x, y] != TileType.Wall) continue;
 
-                var blob = new List<Vector2>();
-                var queue = new Queue<(int, int)>();
-                queue.Enqueue((x, y));
-                visited[x, y] = true;
-
-                while (queue.Count > 0)
-                {
-                    var (cx, cy) = queue.Dequeue();
-                    blob.Add(new Vector2(cx, cy));
-
-                    foreach (var (nx, ny) in new[]{(cx+1,cy),(cx-1,cy),(cx,cy+1),(cx,cy-1)})
+                int floorNeighbors = 0;
+                for (int dx = -1; dx <= 1; dx++)
+                    for (int dy = -1; dy <= 1; dy++)
                     {
-                        if (nx < 0 || ny < 0 || nx >= _width || ny >= _height) continue;
-                        if (visited[nx, ny] || grid[nx, ny] != TileType.Empty) continue;
-                        visited[nx, ny] = true;
-                        queue.Enqueue((nx, ny));
+                        if (dx == 0 && dy == 0) continue;
+                        if (grid[x + dx, y + dy] == TileType.Empty) floorNeighbors++;
                     }
-                }
 
-                if (blob.Count < 6) continue;
-
-                Vector2 centroid = Vector2.Zero;
-                foreach (var p in blob) centroid += p;
-                centroid /= blob.Count;
-
-                int radius = (int)MathF.Sqrt(blob.Count / MathF.PI);
-
-                Rooms.Add(new Room
-                {
-                    Position = centroid,
-                    Radius   = Math.Max(1, radius)
-                });
+                if (floorNeighbors >= 5 || (floorNeighbors >= 3 && _rng.NextDouble() < 0.45))
+                    toErode.Add((x, y));
             }
         }
+
+        foreach (var (x, y) in toErode)
+            grid[x, y] = TileType.Empty;
     }
 
-    private void BuildSpawnPoints(TileType[,] grid)
+    private void SetFloor(TileType[,] grid, int x, int y)
     {
-        SpawnPoints.Clear();
-
-        for (int x = 1; x < _width - 1; x++)
-        {
-            for (int y = 1; y < _height - 1; y++)
-            {
-                if (grid[x, y] != TileType.Empty) continue;
-
-                int walls = 0;
-                if (grid[x + 1, y] == TileType.Wall) walls++;
-                if (grid[x - 1, y] == TileType.Wall) walls++;
-                if (grid[x, y + 1] == TileType.Wall) walls++;
-                if (grid[x, y - 1] == TileType.Wall) walls++;
-
-                Vector2 worldPos = new Vector2(x * TILE_SIZE, y * TILE_SIZE);
-
-                if (walls == 1)
-                    SpawnPoints.Add(new SpawnPoint(worldPos, SpawnType.Edge));
-                else if (walls >= 2)
-                    SpawnPoints.Add(new SpawnPoint(worldPos, SpawnType.Group));
-                else if (_rng.NextDouble() < 0.02)
-                    SpawnPoints.Add(new SpawnPoint(worldPos, SpawnType.Open));
-            }
-        }
+        if (x >= 1 && x < _width - 1 && y >= 1 && y < _height - 1)
+            grid[x, y] = TileType.Empty;
     }
 }
 
 public class Room
 {
-    public Vector2 Position;
-    public int Radius;
+    public Rectangle Bounds;
     public List<Room> Connections = new();
+
+    public Vector2 Center => new Vector2(
+        Bounds.X + Bounds.Width  / 2f,
+        Bounds.Y + Bounds.Height / 2f);
 }

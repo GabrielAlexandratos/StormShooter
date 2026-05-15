@@ -1,4 +1,4 @@
-using System.Drawing;
+using System;
 using Microsoft.Xna.Framework.Graphics;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
 
@@ -13,6 +13,8 @@ public class AnimatedSprite
     private float _fps;
     private float _timer;
     private int _currentFrame;
+
+    public Action<int> OnFrameChanged;
 
     public AnimatedSprite(Texture2D texture, int frameAmount, float fps)
     {
@@ -30,10 +32,11 @@ public class AnimatedSprite
         {
             _timer -= 1f / _fps;
             _currentFrame = (_currentFrame + 1) % _frameAmount;
+            OnFrameChanged?.Invoke(_currentFrame);
         }
     }
     
-    public Microsoft.Xna.Framework.Rectangle? GetSourceRect() => 
+    public Rectangle? GetSourceRect() => 
         new Rectangle(_currentFrame * _frameWidth, 0, _frameWidth, _frameHeight);
     
     public Texture2D Texture => _texture;

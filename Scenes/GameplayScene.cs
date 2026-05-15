@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -16,6 +17,8 @@ public class GameplayScene : Scene
 
     private Texture2D _crosshairTexture;
     private Texture2D _pixel;
+    private Texture2D _dropSprite;
+    private SpriteFont _hudFont;
     private Player _player;
     private Gun _currentGun;
     private BulletManager _bulletManager;
@@ -40,9 +43,11 @@ public class GameplayScene : Scene
     private int _gridWidth = 50;
     private int _gridHeight = 35;
     private int _tileSize = 16;
-    
+
     private Dictionary<string, Texture2D> _gunTextures = new();
     private Dictionary<TileType, Texture2D[]> _tileTextures = new();
+
+    private List<DroppedGun> _droppedGuns = new();
 
     private int _frameCount = 0;
     private int _currentFps = 0;
@@ -69,12 +74,21 @@ public class GameplayScene : Scene
         _pixel = new Texture2D(Game.GraphicsDevice, 1, 1);
         _pixel.SetData(new[] { Color.White });
 
+        // placeholder ammo drop sprite
+        _dropSprite = new Texture2D(Game.GraphicsDevice, 16, 8);
+        var dropPixels = new Color[16 * 8];
+        for (int i = 0; i < dropPixels.Length; i++)
+            dropPixels[i] = new Color(255, 220, 60);
+        _dropSprite.SetData(dropPixels);
+
+        _hudFont = Game.Content.Load<SpriteFont>("Fonts/HudFont");
+
         _crosshairTexture = Game.Content.Load<Texture2D>("crosshair");
         _bulletTexture = Game.Content.Load<Texture2D>("bullet");
 
         _playerIdleTexture = Game.Content.Load<Texture2D>("player_idle");
         _playerWalkTexture = Game.Content.Load<Texture2D>("player_walk_new");
-        
+
         _gunTextures["gun_scraprifle"] = Game.Content.Load<Texture2D>("gun_scraprifle");
         _gunTextures["gun_shotgun"] = Game.Content.Load<Texture2D>("gun_shotgun");
         _gunTextures["gun_asval"] = Game.Content.Load<Texture2D>("gun_asval");
@@ -101,6 +115,8 @@ public class GameplayScene : Scene
             DimBrightness = 0.35f
         };
 
+        SoundManager.Load(Game.Content);
+
         _bulletManager = new BulletManager();
         _enemyManager = new EnemyManager();
         _gunController = new GunController(_random);
@@ -110,6 +126,8 @@ public class GameplayScene : Scene
         _enemyManager.Particles = _particles;
         _enemyManager.Lighting = _lighting;
         _enemyManager.Rng = _random;
+        _enemyManager.OnEnemyDropped += (pos, gun, ammo) =>
+            _droppedGuns.Add(new DroppedGun(pos, gun, ammo));
 
         LevelGenerator generator = new LevelGenerator();
         _grid = new Tile[_gridWidth, _gridHeight];
@@ -123,6 +141,8 @@ public class GameplayScene : Scene
 
         Vector2 spawnPos = FindSpawnPosition();
         _player = new Player(spawnPos, Settings.PlayerSpeed, _playerIdleTexture, _playerWalkTexture);
+        _player.OnFootstep += () => SoundManager.PlayRandom(0.45f, (_random.NextSingle() - 0.5f) * 0.1f, "snowstep1", "snowstep2", "snowstep3");
+        _player.OnDeath += () => Game.ChangeScene(new LoseScene(Game));
 
         var spawner = new EnemySpawner(_grid, _tileSize);
         spawner.Spawn(rooms, _enemyManager, spawnPos);
@@ -141,22 +161,22 @@ public class GameplayScene : Scene
         if (_fpsTimer >= 1.0)
         {
             _currentFps = _frameCount;
-            Game.Window.Title = $"StormShooter | FPS: {_currentFps} | Position: {(int)_player.Position.X}, {(int)_player.Position.Y}";
+            Game.Window.Title = $"StormShooter | FPS: {_currentFps}";
             _frameCount = 0;
             _fpsTimer -= 1.0;
         }
 
         if (_shakeTime > 0) _shakeTime -= dt;
 
-        if (kb.IsKeyDown(Keys.Escape)) 
+        if (kb.IsKeyDown(Keys.Escape))
         {
             Game.ChangeScene(new MainMenuScene(Game));
             return;
         }
 
-        if (kb.IsKeyDown(Keys.F11) && _previousKb.IsKeyUp(Keys.F11)) 
+        if (kb.IsKeyDown(Keys.F11) && _previousKb.IsKeyUp(Keys.F11))
             Game.Graphics.ToggleFullScreen();
-            
+
         _previousKb = kb;
 
         if (_hitStopTime > 0f)
@@ -174,13 +194,33 @@ public class GameplayScene : Scene
         _player.Update(dt, kb, mouseWorld, IsWall);
         _enemyManager.Update(dt, _player.Position, _lighting);
 
-        if (kb.IsKeyDown(Keys.D1)) { _currentGun = GunData.ScrapRifle; _gunController.CancelReload(); }
-        if (kb.IsKeyDown(Keys.D2)) { _currentGun = GunData.Shotgun; _gunController.CancelReload(); }
-        if (kb.IsKeyDown(Keys.D3)) { _currentGun = GunData.VAL; _gunController.CancelReload(); }
+        if (kb.IsKeyDown(Keys.D1)) { _currentGun = GunData.ScrapRifle; SwitchGun();}
+        if (kb.IsKeyDown(Keys.D2)) { _currentGun = GunData.Shotgun; SwitchGun(); }
+        if (kb.IsKeyDown(Keys.D3)) { _currentGun = GunData.VAL; SwitchGun(); }
 
         _gunController.Update(dt, mouse, kb, mouseWorld, _player, _currentGun, _bulletManager, _lighting, ref _shakeTime, ref _shakeStrength, ref _shakeOffset);
         _bulletManager.Update(dt, _enemyManager.Enemies, _particles, _lighting, _currentGun, ref _hitStopTime, ref _shakeTime, ref _shakeStrength, VirtualWidth, VirtualHeight, _random, IsWall, _player);
         _particles.Update(dt);
+
+        // Update dropped guns and handle pickup interaction
+        bool fHeld = kb.IsKeyDown(Keys.F);
+        var pickupToRemove = new List<DroppedGun>();
+        foreach (var drop in _droppedGuns)
+        {
+            bool done = drop.Update(dt, _player.Position, fHeld);
+            if (done)
+            {
+                _gunController.AddAmmo(drop.Gun.AmmoType, drop.AmmoCount);
+                SoundManager.Play("unload");
+                pickupToRemove.Add(drop);
+            }
+        }
+        foreach (var drop in pickupToRemove)
+            _droppedGuns.Remove(drop);
+
+        // make sure drops are seen with a light
+        foreach (var drop in _droppedGuns)
+            _lighting.AddLight(new LightSource(drop.Position, 35f, new Color(255, 220, 60) * 2f, 0.4f));
 
         Vector2 lookOffset = (mouseWorld - _player.Position) * 0.2f;
         Vector2 cameraTarget = _player.Position + lookOffset
@@ -190,6 +230,7 @@ public class GameplayScene : Scene
         _shakeOffset = Vector2.Lerp(_shakeOffset, Vector2.Zero, dt * 20f);
     }
 
+    [SuppressMessage("ReSharper", "PossibleLossOfFraction")]
     public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -230,6 +271,17 @@ public class GameplayScene : Scene
                     spriteBatch.Draw(textures[tile.Variant % textures.Length], new Vector2(x * _tileSize, y * _tileSize), Color.White);
             }
 
+        // Draw dropped guns
+        foreach (var drop in _droppedGuns)
+        {
+            Vector2 worldPos = drop.Position;
+            int spriteW = _dropSprite.Width;
+            int spriteH = _dropSprite.Height;
+            spriteBatch.Draw(_dropSprite,
+                new Vector2(MathF.Round(worldPos.X - spriteW / 2f), MathF.Round(worldPos.Y - spriteH / 2f)),
+                Color.White);
+        }
+
         _player.Draw(spriteBatch, GetGunTexture(_currentGun), _currentGun);
         _enemyManager.Draw(spriteBatch, _pixel);
         _bulletManager.Draw(spriteBatch, _bulletTexture);
@@ -247,8 +299,19 @@ public class GameplayScene : Scene
         spriteBatch.Draw(lightMap, finalDestRect, Color.White);
         spriteBatch.End();
 
+        // draw all UI
         spriteBatch.Begin(samplerState: _pointSampler);
 
+        // Health bar 
+        int hBarW = (int)(80 * currentScale);
+        int hBarH = (int)(7 * currentScale);
+        int hBarX = finalDestRect.X + (int)(10 * currentScale);
+        int hBarY = finalDestRect.Y + (int)(10 * currentScale);
+        int hBarFill = (int)(hBarW * (_player.Health / _player.MaxHealth));
+        spriteBatch.Draw(_pixel, new Rectangle(hBarX, hBarY, hBarW, hBarH), Color.Black * 0.5f);
+        spriteBatch.Draw(_pixel, new Rectangle(hBarX, hBarY, hBarFill, hBarH), Color.Red);
+
+        // Ammo casings
         int currentAmmo = _gunController.GetCurrentAmmo(_currentGun);
         for (int i = 0; i < currentAmmo; i++)
         {
@@ -257,6 +320,35 @@ public class GameplayScene : Scene
             spriteBatch.Draw(_pixel, new Rectangle(ax, ay, (int)(2 * currentScale), (int)(6 * currentScale)), Color.Orange);
         }
 
+        // Ammo pool count
+        int poolAmmo   = _gunController.GetPoolAmmo(_currentGun.AmmoType);
+        Color poolColor = _currentGun.AmmoType switch
+        {
+            AmmoType.Light  => new Color(180, 230, 255),
+            AmmoType.Medium => new Color(255, 210, 100),
+            AmmoType.Heavy  => new Color(255, 120, 80),
+            _               => Color.White
+        };
+        string poolLabel = _currentGun.AmmoType switch
+        {
+            AmmoType.Light  => "LGT",
+            AmmoType.Medium => "MED",
+            AmmoType.Heavy  => "HVY",
+            _               => "---"
+        };
+        string poolText = $"{poolLabel} {poolAmmo}";
+
+        float fontScale     = currentScale * 0.6f;
+        Vector2 textSize    = _hudFont.MeasureString(poolText) * fontScale;
+        Vector2 poolTextPos = new Vector2(
+            finalDestRect.X + (int)(10 * currentScale),
+            finalDestRect.Y + finalDestRect.Height - (int)(15 * currentScale) - textSize.Y - (int)(3 * currentScale)
+        );
+        // slight text shadow
+        spriteBatch.DrawString(_hudFont, poolText, poolTextPos + Vector2.One * currentScale, Color.Black * 0.8f, 0f, Vector2.Zero, fontScale, SpriteEffects.None, 0f);
+        spriteBatch.DrawString(_hudFont, poolText, poolTextPos, poolColor, 0f, Vector2.Zero, fontScale, SpriteEffects.None, 0f);
+
+        // Reload bar above player
         if (_gunController.IsReloading)
         {
             Vector2 screenPos = WorldToScreen(_player.Position, finalDestRect, currentScale);
@@ -267,6 +359,39 @@ public class GameplayScene : Scene
             Rectangle reloadFill = new Rectangle(reloadBg.X, reloadBg.Y, (int)(reloadBg.Width * progress), reloadBg.Height);
             spriteBatch.Draw(_pixel, reloadBg, Color.Black * 0.5f);
             spriteBatch.Draw(_pixel, reloadFill, Color.White);
+        }
+
+        // pickup prompt
+        foreach (var drop in _droppedGuns)
+        {
+            if (!drop.InRange) continue;
+
+            Vector2 screenPos = WorldToScreen(drop.Position, finalDestRect, currentScale);
+
+            if (!drop.IsBeingInteracted)
+            {
+                string textPopup = "[F] Unload";
+                float textScale = currentScale * 0.5f;
+                Vector2 popupSize = _hudFont.MeasureString(textPopup) * textScale;
+                Vector2 pPos = new Vector2(screenPos.X - popupSize.X / 2f, screenPos.Y - (int)(18 * currentScale));
+                spriteBatch.DrawString(_hudFont, textPopup, pPos + Vector2.One * currentScale, Color.Black * 0.8f, 0f, Vector2.Zero, textScale, SpriteEffects.None, 0f);
+                spriteBatch.DrawString(_hudFont, textPopup, pPos, new Color(255, 220, 60), 0f, Vector2.Zero, textScale, SpriteEffects.None, 0f);
+            }
+        }
+
+        foreach (var drop in _droppedGuns)
+        {
+            if (!drop.IsBeingInteracted) continue;
+
+            Vector2 screenPos = WorldToScreen(drop.Position, finalDestRect, currentScale);
+            int barW = (int)(24 * currentScale);
+            int barH = (int)(3  * currentScale);
+            int barX = (int)screenPos.X - barW / 2;
+            int barY = (int)screenPos.Y - (int)(12 * currentScale);
+            int fillW = (int)(barW * drop.InteractProgress);
+
+            spriteBatch.Draw(_pixel, new Rectangle(barX, barY, barW, barH), Color.Black * 0.6f);
+            spriteBatch.Draw(_pixel, new Rectangle(barX, barY, fillW, barH), Color.White);
         }
 
         Vector2 crosshairPos = new Vector2(mouse.X, mouse.Y);
@@ -281,6 +406,7 @@ public class GameplayScene : Scene
         _lighting?.Dispose();
         _renderTarget?.Dispose();
         _pixel?.Dispose();
+        _dropSprite?.Dispose();
         base.UnloadContent();
     }
 
@@ -329,7 +455,12 @@ public class GameplayScene : Scene
 
     private Texture2D GetGunTexture(Gun gun)
     {
-        if (_gunTextures.TryGetValue(gun.SpriteName, out var texture)) return texture;
-        return _pixel;
+        return _gunTextures.GetValueOrDefault(gun.SpriteName, _pixel);
+    }
+
+    private void SwitchGun()
+    {
+        _gunController.CancelReload(); 
+        SoundManager.Play("equip.wav", 1f, (_random.NextSingle() - 0.5f) * 0.3f);
     }
 }

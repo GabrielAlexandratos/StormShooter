@@ -2,8 +2,11 @@ namespace StormShooter;
 
 using Microsoft.Xna.Framework;
 
+public enum AmmoType { Light, Medium, Heavy }
+
 public class Gun
 {
+    public AmmoType AmmoType = AmmoType.Medium;
     public float Damage = 1f; // damage per bullet
     public float MagSize = 12f; // total mag size
     public float ReloadTime = 1f; // time to reload
@@ -29,6 +32,8 @@ public class Gun
     public int MaxBounces = 5; // how many times can they bounce max before despawning
     public string SpriteName = "gun_smg";
     public Vector2 SpriteOrigin = new Vector2(1f, 4f);
-    public Vector2 MuzzleOffset = new Vector2(15f, -1f); // positioning the fire point 
+    public Vector2 MuzzleOffset = new Vector2(15f, -1f); // positioning the fire point
     public float SpriteScale = 1f;
+    public string ShotSound = "pistolshot";
+    public string ReloadSound = "akreload";
 }

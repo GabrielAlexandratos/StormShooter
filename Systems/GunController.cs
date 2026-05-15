@@ -15,13 +15,48 @@ public class GunController
     private float _burstTimer;
     private bool _isBursting;
 
-    //ammo
+    // ammo tracking for each gun
     private readonly Dictionary<Gun, int> _ammoPool = new();
     private float _reloadTimer;
     public int GetCurrentAmmo(Gun gun) => _ammoPool.GetValueOrDefault(gun, (int)gun.MagSize);
 
     public float ReloadProgress => _reloadTimer;
     public bool IsReloading => _reloadTimer > 0f;
+
+    // Global ammo pools
+    private int _lightAmmo = 20;
+    private int _mediumAmmo = 15;
+    private int _heavyAmmo = 5;
+
+    private const int MaxAmmo = 999;
+
+    public int GetPoolAmmo(AmmoType type) => type switch
+    {
+        AmmoType.Light  => _lightAmmo,
+        AmmoType.Medium => _mediumAmmo,
+        AmmoType.Heavy  => _heavyAmmo,
+        _               => 0
+    };
+
+    public void AddAmmo(AmmoType type, int amount)
+    {
+        switch (type)
+        {
+            case AmmoType.Light:  _lightAmmo  = Math.Min(MaxAmmo, _lightAmmo  + amount); break;
+            case AmmoType.Medium: _mediumAmmo = Math.Min(MaxAmmo, _mediumAmmo + amount); break;
+            case AmmoType.Heavy:  _heavyAmmo  = Math.Min(MaxAmmo, _heavyAmmo  + amount); break;
+        }
+    }
+
+    private void ConsumeAmmo(AmmoType type, int amount)
+    {
+        switch (type)
+        {
+            case AmmoType.Light:  _lightAmmo  = Math.Max(0, _lightAmmo  - amount); break;
+            case AmmoType.Medium: _mediumAmmo = Math.Max(0, _mediumAmmo - amount); break;
+            case AmmoType.Heavy:  _heavyAmmo  = Math.Max(0, _heavyAmmo  - amount); break;
+        }
+    }
 
     public GunController(Random random) => _random = random;
 
@@ -45,14 +80,24 @@ public class GunController
         {
             _reloadTimer -= dt;
             if (_reloadTimer <= 0f)
-                _ammoPool[gun] = (int)gun.MagSize;
+            {
+                int needed    = (int)gun.MagSize - _ammoPool[gun];
+                int available = GetPoolAmmo(gun.AmmoType);
+                int toLoad    = Math.Min(needed, available);
+                _ammoPool[gun] += toLoad;
+                ConsumeAmmo(gun.AmmoType, toLoad);
+            }
 
             return;
         }
 
-        if (kb.IsKeyDown(Keys.R) && _ammoPool[gun] < gun.MagSize)
+        bool magNotFull  = _ammoPool[gun] < (int)gun.MagSize;
+        bool poolHasAmmo = GetPoolAmmo(gun.AmmoType) > 0;
+
+        if (kb.IsKeyDown(Keys.R) && magNotFull && poolHasAmmo)
         {
             _reloadTimer = gun.ReloadTime;
+            SoundManager.Play(gun.ReloadSound, 1f);
             return;
         }
 
@@ -75,7 +120,6 @@ public class GunController
 
         if (_shotCooldown > 0f) _shotCooldown -= dt;
 
-        //Check if the player can is not allready shooting or in a cooldown
         if (wantsToShoot && _shotCooldown <= 0f && !_isBursting)
         {
             if (_ammoPool[gun] > 0)
@@ -93,6 +137,11 @@ public class GunController
 
                 _shotCooldown = 1f / gun.FireRate;
             }
+            else
+            {
+                SoundManager.Play("dry_fire", 0.6f);
+                _shotCooldown = 0.3f; // i want to stop this from firing when holding down on an auto weapon
+            }
         }
 
         _previousMouse = mouse;
@@ -109,6 +158,7 @@ public class GunController
         ref Vector2 shakeOffset)
     {
         _ammoPool[gun]--;
+        SoundManager.Play(gun.ShotSound, 0.4f, (_random.NextSingle() - 0.5f) * 0.4f);
 
         Vector2 direction = mouseWorld - player.Position;
         if (direction.LengthSquared() > 0.0001f) direction.Normalize();
@@ -151,7 +201,6 @@ public class GunController
 
         shakeTime = gun.ShakeDuration;
         shakeStrength = 0f;
-        // shakeStrength = gun.ShakeStrength; (old random screen shake when shooting)
         player.ApplyRecoil(direction, 10, _random.NextSingle() * 0.12f);
     }
 
