@@ -56,7 +56,7 @@ public class DroppedGun
             destRect.Y + (Position.Y - cameraPos.Y) * scale
         );
 
-        // spawn sprite on enemy
+        // spawn sprite
         int spriteSize = (int)(8 * scale);
         Rectangle drawRect = new Rectangle(
             (int)screenPos.X - spriteSize / 2,
@@ -68,11 +68,11 @@ public class DroppedGun
         // interaction progress bar
         if (IsBeingInteracted)
         {
-            int barW    = (int)(24 * scale);
-            int barH    = (int)(3  * scale);
-            int barX    = (int)screenPos.X - barW / 2;
-            int barY    = (int)screenPos.Y - spriteSize / 2 - barH - (int)(3 * scale);
-            int fillW   = (int)(barW * InteractProgress);
+            int barW = (int)(24 * scale);
+            int barH = (int)(3 * scale);
+            int barX = (int)screenPos.X - barW / 2;
+            int barY = (int)screenPos.Y - spriteSize / 2 - barH - (int)(3 * scale);
+            int fillW = (int)(barW * InteractProgress);
 
             spriteBatch.Draw(pixel, new Rectangle(barX, barY, barW, barH), Color.Black * 0.6f);
             spriteBatch.Draw(pixel, new Rectangle(barX, barY, fillW, barH), Color.White);

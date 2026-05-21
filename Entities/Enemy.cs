@@ -10,7 +10,7 @@ public class Enemy
     public Vector2 Velocity;
 
     public float Radius = 6f;
-    public float Health = 4f;
+    public float Health = 5f;
     public Gun Gun { get; set; } = null;
 
     private float _flashTime;
@@ -46,6 +46,10 @@ public class Enemy
 
     public void Draw(SpriteBatch spriteBatch, Texture2D pixel)
     {
+        // if the enemy should be flashing then they are white
+        // if not then check if they should be winding up (orange)
+        //if not then they are red
+        // this is only relevant anyway until I add proper enemy art
         Color bodyColor = _flashTime > 0 ? Color.White
                        : AI?.State == EnemyState.WindUp ? Color.Orange
                        : Color.Red;
@@ -53,6 +57,7 @@ public class Enemy
         spriteBatch.Draw(pixel, Position, null, bodyColor, 0f,
             new Vector2(0.5f, 0.5f), new Vector2(Radius * 2, Radius * 2), SpriteEffects.None, 0f);
 
+        // aim at the playing as long as they are not patrolling
         if (AI != null && AI.State != EnemyState.Patrol)
         {
             float angle = AI.AimAngle;

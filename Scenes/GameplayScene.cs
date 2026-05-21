@@ -33,6 +33,9 @@ public class GameplayScene : Scene
     private Vector2 _shakeOffset;
     private float _hitStopTime;
     private Vector2 _cameraPos;
+    private float _zoom = 1f;
+    private float _vignetteAlpha = 0f;
+    private Texture2D _vignetteTexture;
 
     private ParticleSystem _particles = new();
     private EnemyManager _enemyManager;
@@ -65,6 +68,7 @@ public class GameplayScene : Scene
 
     public GameplayScene(Game1 game) : base(game)
     {
+        
     }
 
     public override void LoadContent()
@@ -73,6 +77,22 @@ public class GameplayScene : Scene
 
         _pixel = new Texture2D(Game.GraphicsDevice, 1, 1);
         _pixel.SetData(new[] { Color.White });
+
+        _vignetteTexture = new Texture2D(Game.GraphicsDevice, VirtualWidth, VirtualHeight);
+        var vignPixels = new Color[VirtualWidth * VirtualHeight];
+        Vector2 vignCenter = new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
+        float innerRadius = Math.Min(VirtualWidth, VirtualHeight) * 0.3f;
+        float outerRadius = Math.Min(VirtualWidth, VirtualHeight) * 0.72f;
+        for (int y = 0; y < VirtualHeight; y++)
+        {
+            for (int x = 0; x < VirtualWidth; x++)
+            {
+                float dist = Vector2.Distance(new Vector2(x, y), vignCenter);
+                float t = MathHelper.Clamp((dist - innerRadius) / (outerRadius - innerRadius), 0f, 1f);
+                vignPixels[y * VirtualWidth + x] = Color.Black * (t * t);
+            }
+        }
+        _vignetteTexture.SetData(vignPixels);
 
         // placeholder ammo drop sprite
         _dropSprite = new Texture2D(Game.GraphicsDevice, 16, 8);
@@ -116,6 +136,7 @@ public class GameplayScene : Scene
         };
 
         SoundManager.Load(Game.Content);
+        SoundManager.PlayWindAmbience(1.15f);
 
         _bulletManager = new BulletManager();
         _enemyManager = new EnemyManager();
@@ -126,8 +147,7 @@ public class GameplayScene : Scene
         _enemyManager.Particles = _particles;
         _enemyManager.Lighting = _lighting;
         _enemyManager.Rng = _random;
-        _enemyManager.OnEnemyDropped += (pos, gun, ammo) =>
-            _droppedGuns.Add(new DroppedGun(pos, gun, ammo));
+        _enemyManager.OnEnemyDropped += (pos, gun, ammo) => _droppedGuns.Add(new DroppedGun(pos, gun, ammo));
 
         LevelGenerator generator = new LevelGenerator();
         _grid = new Tile[_gridWidth, _gridHeight];
@@ -141,7 +161,7 @@ public class GameplayScene : Scene
 
         Vector2 spawnPos = FindSpawnPosition();
         _player = new Player(spawnPos, Settings.PlayerSpeed, _playerIdleTexture, _playerWalkTexture);
-        _player.OnFootstep += () => SoundManager.PlayRandom(0.45f, (_random.NextSingle() - 0.5f) * 0.1f, "snowstep1", "snowstep2", "snowstep3");
+        _player.OnFootstep += () => SoundManager.PlayRandom(0.25f, (_random.NextSingle() - 0.5f) * 0.08f, "snowstep1", "snowstep2", "snowstep3");
         _player.OnDeath += () => Game.ChangeScene(new LoseScene(Game));
 
         var spawner = new EnemySpawner(_grid, _tileSize);
@@ -152,8 +172,8 @@ public class GameplayScene : Scene
 
     public override void Update(GameTime gameTime)
     {
-        var kb = Keyboard.GetState();
         var mouse = Mouse.GetState();
+        var kb = Keyboard.GetState();
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
         _fpsTimer += dt;
@@ -168,7 +188,7 @@ public class GameplayScene : Scene
 
         if (_shakeTime > 0) _shakeTime -= dt;
 
-        if (kb.IsKeyDown(Keys.Escape))
+        if (kb.IsKeyDown(Keys.Escape) && _previousKb.IsKeyUp(Keys.Escape))
         {
             Game.ChangeScene(new MainMenuScene(Game));
             return;
@@ -177,29 +197,43 @@ public class GameplayScene : Scene
         if (kb.IsKeyDown(Keys.F11) && _previousKb.IsKeyUp(Keys.F11))
             Game.Graphics.ToggleFullScreen();
 
-        _previousKb = kb;
-
         if (_hitStopTime > 0f)
         {
             _hitStopTime -= dt;
             return;
         }
 
+        float targetZoom = _gunController.IsReloading ? 1.65f : 1f;
+        _zoom = MathHelper.Lerp(_zoom, targetZoom, dt * 6f);
+        _player.SpeedMultiplier = _gunController.IsReloading ? 0.3f : 1f;
+
         var destRect = GetDestinationRectangle();
         float currentScale = (float)destRect.Height / VirtualHeight;
         float mouseX = (mouse.X - destRect.X) / currentScale;
         float mouseY = (mouse.Y - destRect.Y) / currentScale;
-        Vector2 mouseWorld = _cameraPos + new Vector2(mouseX, mouseY);
+        Vector2 cameraCenter = _cameraPos + new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
+        Vector2 mouseWorld = cameraCenter + (new Vector2(mouseX, mouseY) - new Vector2(VirtualWidth / 2f, VirtualHeight / 2f)) / _zoom;
 
-        _player.Update(dt, kb, mouseWorld, IsWall);
-        _enemyManager.Update(dt, _player.Position, _lighting);
+        bool reloading = _gunController.IsReloading;
+        _vignetteAlpha = MathHelper.Lerp(_vignetteAlpha, reloading ? 1f : 0f, dt * 8f);
 
-        if (kb.IsKeyDown(Keys.D1)) { _currentGun = GunData.ScrapRifle; SwitchGun();}
-        if (kb.IsKeyDown(Keys.D2)) { _currentGun = GunData.Shotgun; SwitchGun(); }
-        if (kb.IsKeyDown(Keys.D3)) { _currentGun = GunData.VAL; SwitchGun(); }
+        _player.Update(dt, kb, mouseWorld, _currentGun, IsWall);
+        _enemyManager.Update(dt, _player.Position, reloading ? null : _lighting);
 
-        _gunController.Update(dt, mouse, kb, mouseWorld, _player, _currentGun, _bulletManager, _lighting, ref _shakeTime, ref _shakeStrength, ref _shakeOffset);
-        _bulletManager.Update(dt, _enemyManager.Enemies, _particles, _lighting, _currentGun, ref _hitStopTime, ref _shakeTime, ref _shakeStrength, VirtualWidth, VirtualHeight, _random, IsWall, _player);
+        Gun selectedGun = null;
+        if (kb.IsKeyDown(Keys.D1) && _previousKb.IsKeyUp(Keys.D1)) selectedGun = GunData.ScrapRifle;
+        else if (kb.IsKeyDown(Keys.D2) && _previousKb.IsKeyUp(Keys.D2)) selectedGun = GunData.Shotgun;
+        else if (kb.IsKeyDown(Keys.D3) && _previousKb.IsKeyUp(Keys.D3)) selectedGun = GunData.VAL;
+        else if (kb.IsKeyDown(Keys.D4) && _previousKb.IsKeyUp(Keys.D4)) selectedGun = GunData.BurstRifle;
+
+        if (selectedGun != null && _currentGun != selectedGun)
+        {
+            _currentGun = selectedGun;
+            SwitchGun();
+        }
+        
+        _gunController.Update(dt, mouse, kb, _previousKb, mouseWorld, _player, _currentGun, _bulletManager, _lighting, ref _shakeTime, ref _shakeStrength, ref _shakeOffset);
+        _bulletManager.Update(dt, _enemyManager.Enemies, _particles, reloading ? null : _lighting, _currentGun, ref _hitStopTime, ref _shakeTime, ref _shakeStrength, VirtualWidth, VirtualHeight, _random, IsWall, _player);
         _particles.Update(dt);
 
         // Update dropped guns and handle pickup interaction
@@ -218,19 +252,18 @@ public class GameplayScene : Scene
         foreach (var drop in pickupToRemove)
             _droppedGuns.Remove(drop);
 
-        // make sure drops are seen with a light
-        foreach (var drop in _droppedGuns)
-            _lighting.AddLight(new LightSource(drop.Position, 35f, new Color(255, 220, 60) * 2f, 0.4f));
+        if (!reloading)
+            foreach (var drop in _droppedGuns)
+                _lighting.AddLight(new LightSource(drop.Position, 35f, new Color(255, 220, 60) * 2f, 0.4f));
 
         Vector2 lookOffset = (mouseWorld - _player.Position) * 0.2f;
-        Vector2 cameraTarget = _player.Position + lookOffset
-                               - new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
+        Vector2 cameraTarget = _player.Position + lookOffset - new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
 
         _cameraPos = Vector2.Lerp(_cameraPos, cameraTarget, 10f * dt);
         _shakeOffset = Vector2.Lerp(_shakeOffset, Vector2.Zero, dt * 20f);
+        _previousKb = kb;
     }
 
-    [SuppressMessage("ReSharper", "PossibleLossOfFraction")]
     public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
     {
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -248,8 +281,11 @@ public class GameplayScene : Scene
         finalDestRect.X += (int)(_shakeOffset.X * currentScale);
         finalDestRect.Y += (int)(_shakeOffset.Y * currentScale);
 
-        Vector2 cameraOffset = _cameraPos;
-        Matrix lowResCamera = Matrix.CreateTranslation(-cameraOffset.X, -cameraOffset.Y, 0f);
+        Vector2 cameraCenter = _cameraPos + new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
+        Matrix lowResCamera =
+            Matrix.CreateTranslation(-cameraCenter.X, -cameraCenter.Y, 0f) *
+            Matrix.CreateScale(_zoom, _zoom, 1f) *
+            Matrix.CreateTranslation(VirtualWidth / 2f, VirtualHeight / 2f, 0f);
 
         var lightMap = _lighting.BuildLightMap(spriteBatch, _player.Position, _cameraPos, dt);
 
@@ -258,8 +294,8 @@ public class GameplayScene : Scene
 
         spriteBatch.Begin(samplerState: _pointSampler, transformMatrix: lowResCamera);
 
-        int startX = Math.Max(0, (int)(cameraOffset.X / _tileSize));
-        int startY = Math.Max(0, (int)(cameraOffset.Y / _tileSize));
+        int startX = Math.Max(0, (int)(_cameraPos.X / _tileSize));
+        int startY = Math.Max(0, (int)(_cameraPos.Y / _tileSize));
         int endX = Math.Min(_gridWidth, startX + (VirtualWidth / _tileSize) + 2);
         int endY = Math.Min(_gridHeight, startY + (VirtualHeight / _tileSize) + 2);
 
@@ -299,6 +335,13 @@ public class GameplayScene : Scene
         spriteBatch.Draw(lightMap, finalDestRect, Color.White);
         spriteBatch.End();
 
+        if (_vignetteAlpha > 0.01f)
+        {
+            spriteBatch.Begin(samplerState: _pointSampler);
+            spriteBatch.Draw(_vignetteTexture, finalDestRect, Color.White * _vignetteAlpha);
+            spriteBatch.End();
+        }
+
         // draw all UI
         spriteBatch.Begin(samplerState: _pointSampler);
 
@@ -321,25 +364,25 @@ public class GameplayScene : Scene
         }
 
         // Ammo pool count
-        int poolAmmo   = _gunController.GetPoolAmmo(_currentGun.AmmoType);
+        int poolAmmo = _gunController.GetPoolAmmo(_currentGun.AmmoType);
         Color poolColor = _currentGun.AmmoType switch
         {
-            AmmoType.Light  => new Color(180, 230, 255),
+            AmmoType.Light => new Color(180, 230, 255),
             AmmoType.Medium => new Color(255, 210, 100),
-            AmmoType.Heavy  => new Color(255, 120, 80),
+            AmmoType.Heavy => new Color(255, 120, 80),
             _               => Color.White
         };
         string poolLabel = _currentGun.AmmoType switch
         {
-            AmmoType.Light  => "LGT",
-            AmmoType.Medium => "MED",
-            AmmoType.Heavy  => "HVY",
+            AmmoType.Light => "LIGHT",
+            AmmoType.Medium => "MEDIUM",
+            AmmoType.Heavy => "HEAVY",
             _               => "---"
         };
         string poolText = $"{poolLabel} {poolAmmo}";
 
-        float fontScale     = currentScale * 0.6f;
-        Vector2 textSize    = _hudFont.MeasureString(poolText) * fontScale;
+        float fontScale = currentScale * 0.6f;
+        Vector2 textSize = _hudFont.MeasureString(poolText) * fontScale;
         Vector2 poolTextPos = new Vector2(
             finalDestRect.X + (int)(10 * currentScale),
             finalDestRect.Y + finalDestRect.Height - (int)(15 * currentScale) - textSize.Y - (int)(3 * currentScale)
@@ -403,10 +446,12 @@ public class GameplayScene : Scene
 
     public override void UnloadContent()
     {
+        SoundManager.StopWindAmbience();
         _lighting?.Dispose();
         _renderTarget?.Dispose();
         _pixel?.Dispose();
         _dropSprite?.Dispose();
+        _vignetteTexture?.Dispose();
         base.UnloadContent();
     }
 
@@ -427,9 +472,11 @@ public class GameplayScene : Scene
 
     private Vector2 WorldToScreen(Vector2 worldPos, Rectangle destRect, float scale)
     {
+        Vector2 cameraCenter = _cameraPos + new Vector2(VirtualWidth / 2f, VirtualHeight / 2f);
+        Vector2 offset = (worldPos - cameraCenter) * _zoom;
         return new Vector2(
-            destRect.X + (worldPos.X - _cameraPos.X) * scale,
-            destRect.Y + (worldPos.Y - _cameraPos.Y) * scale
+            destRect.X + (VirtualWidth / 2f + offset.X) * scale,
+            destRect.Y + (VirtualHeight / 2f + offset.Y) * scale
         );
     }
 
@@ -460,7 +507,7 @@ public class GameplayScene : Scene
 
     private void SwitchGun()
     {
-        _gunController.CancelReload(); 
-        SoundManager.Play("equip.wav", 1f, (_random.NextSingle() - 0.5f) * 0.3f);
+        _gunController.CancelReload();
+        SoundManager.Play("equip", 0.3f);
     }
 }

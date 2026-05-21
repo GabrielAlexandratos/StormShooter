@@ -50,7 +50,7 @@ public class EnemySpawner
         while (spawned < count && attempts < count * 20)
         {
             attempts++;
-            int tx = _random.Next(room.Bounds.X + 1, room.Bounds.X + room.Bounds.Width  - 1);
+            int tx = _random.Next(room.Bounds.X + 1, room.Bounds.X + room.Bounds.Width - 1);
             int ty = _random.Next(room.Bounds.Y + 1, room.Bounds.Y + room.Bounds.Height - 1);
 
             if (_grid[tx, ty].Type != TileType.Empty) continue;
@@ -58,7 +58,7 @@ public class EnemySpawner
             Vector2 pos = new Vector2(tx * _tileSize + _tileSize / 2f, ty * _tileSize + _tileSize / 2f);
             if (!IsFarFromOthers(pos, manager)) continue;
 
-            manager.AddEnemy(pos, EnemyType.Basic, GunData.EnemyRifle);
+            manager.AddEnemy(pos, EnemyType.Basic, GunData.EnemyVAL);
             spawned++;
         }
     }

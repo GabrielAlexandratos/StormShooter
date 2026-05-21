@@ -7,6 +7,8 @@ namespace StormShooter;
 
 public class BulletManager
 {
+    private readonly Random _random = new();
+    
     private readonly List<Bullet> _bullets = new();
 
     private const int TileSize = Settings.TileSize;
@@ -73,6 +75,10 @@ public class BulletManager
             HitResult hit = TraceRay(frameStart, b.Position, isWall);
             if (hit.DidHit)
             {
+                SpawnDustParticles(particles, random, hit.SafePosition,
+                    b.Velocity.LengthSquared() > 0f ? Vector2.Normalize(b.Velocity) : Vector2.UnitX,
+                    new Color(140, 140, 140));
+                SoundManager.PlayRandom(0.1f, (_random.NextSingle() - 0.5f) * 0.08f, "snowimpact1", "snowimpact2");
                 if (b.BouncesRemaining > 0)
                 {
                     b.Velocity = ReflectVelocity(b.Velocity, hit.Normal);
@@ -131,7 +137,7 @@ public class BulletManager
                     {
                         capturedShakeTime = t;
                         capturedShakeStrength = s;
-                    }, currentGun.ShakeStrength);
+                    }, currentGun.HitShakeStrength);
 
                     shakeTime = capturedShakeTime;
                     shakeStrength = capturedShakeStrength;
@@ -153,7 +159,7 @@ public class BulletManager
             if (bulletHit)
                 _bullets.RemoveAt(i);
             else
-                lighting.AddLight(new LightSource(b.Position, 20f, Color.White, 0.04f));
+                lighting?.AddLight(new LightSource(b.Position, 20f, Color.White, 0.04f));
         }
     }
 
@@ -169,10 +175,10 @@ public class BulletManager
                 Velocity = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * speed,
                 Life = 0.3f,
                 MaxLife = 0.45f,
-                Size = j < 4 ? 12f : 7f, // chunks + splatter
+                Size = j < 4 ? 10f : 5f,
                 Rotation = angle,
                 Color = j % 3 == 0 ? new Color(255, 60, 60) : new Color(180, 20, 20),
-                Drag = 5f,
+                Drag = 10f,
                 Gravity = 55f
             });
         }
@@ -180,21 +186,43 @@ public class BulletManager
 
     private static void SpawnHitParticles(ParticleSystem particles, Random random, Vector2 pos, Vector2 dir, Color baseColor)
     {
-        for (int j = 0; j < 8 + random.Next(4); j++)
+        for (int particle = 0; particle < 8 + random.Next(4); particle++)
         {
             float angle = MathF.Atan2(dir.Y, dir.X) + (random.NextSingle() - 0.5f) * 1.6f;
-            float speed = 220f + random.NextSingle() * 380f;
+            float speed = 190f + random.NextSingle() * 380f;
             particles.Add(new Particle
             {
                 Position = pos,
                 Velocity = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * speed,
                 Life = 0.18f,
                 MaxLife = 0.28f,
-                Size = j < 3 ? 10f : 6f,
+                Size = particle < 3 ? 8f : 5f,
                 Rotation = angle,
-                Color = j % 2 == 0 ? baseColor : new Color(255, 80, 80),
-                Drag = 7f,
+                Color = particle % 2 == 0 ? baseColor : new Color(255, 80, 80),
+                Drag = 15f,
                 Gravity = 70f
+            });
+        }
+    }
+    
+    private static void SpawnDustParticles(ParticleSystem particles, Random random, Vector2 pos, Vector2 dir, Color baseColor)
+    {
+        for (int particle = 0; particle < 4 + random.Next(2); particle++)
+        {
+            float angle = MathF.Atan2(dir.Y, dir.X) + MathF.PI + (random.NextSingle() - 0.5f) * 1.6f;
+            float speed = 120f + random.NextSingle() * 380f;
+            particles.Add(new Particle
+            {
+                Position = pos,
+                Velocity = new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * speed,
+                Life = 0.18f,
+                MaxLife = 0.28f,
+                Size = particle < 3 ? 7f : 5f,
+                Rotation = angle,
+                Color = particle % 2 == 0 ? baseColor : new Color(255, 175, 71),
+                Drag = 14f,
+                Gravity = 70f,
+                IsSquare = true
             });
         }
     }

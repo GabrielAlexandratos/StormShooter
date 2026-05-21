@@ -16,6 +16,7 @@ public class Player
     private Vector2 _recoilOffset;
     private float _recoilRotation;
     private float _recoilRecoverSpeed = 10f;
+    private bool _hasAimRotation;
 
     private AnimatedSprite _idleAnim;
     private AnimatedSprite _walkAnim;
@@ -24,8 +25,9 @@ public class Player
 
     public int[] FootstepFrames = { 1, 4 };
     public Action OnFootstep;
+    public float SpeedMultiplier = 1f;
 
-    public float MaxHealth = 100f;
+    public float MaxHealth = 60f;
     public float Health;
     public float IFrameDuration = 0.8f;
     private float _iFrameTimer;
@@ -49,16 +51,15 @@ public class Player
         };
     }
 
-    public void Update(float dt, KeyboardState kb, Vector2 mouseWorld, Func<Vector2, bool> isWall)
+    public void Update(float dt, KeyboardState kb, Vector2 mouseWorld, Gun gun, Func<Vector2, bool> isWall)
     {
         Vector2 move = Vector2.Zero;
         if (kb.IsKeyDown(Keys.W)) move.Y -= 1f;
         if (kb.IsKeyDown(Keys.S)) move.Y += 1f;
         if (kb.IsKeyDown(Keys.A)) move.X -= 1f;
         if (kb.IsKeyDown(Keys.D)) move.X += 1f;
-
         if (move != Vector2.Zero) move.Normalize();
-        move *= _speed * dt;
+        move *= _speed * SpeedMultiplier * gun.EquippedMoveSpeedMultiplier * dt;
         
         bool wasMoving = _isMoving;
         _isMoving = move != Vector2.Zero;
@@ -77,7 +78,18 @@ public class Player
         if (direction.LengthSquared() > 0.0001f) direction.Normalize();
 
         _gunPos = Position + direction * 0.5f + _recoilOffset + new Vector2(0f, 3f);
-        _gunRotation = (float)Math.Atan2(direction.Y, direction.X);
+        float targetRotation = (float)Math.Atan2(direction.Y, direction.X);
+        if (!_hasAimRotation)
+        {
+            _gunRotation = targetRotation;
+            _hasAimRotation = true;
+        }
+        else
+        {
+            float aimLerpSpeed = MathHelper.Clamp(22f / Math.Max(0.2f, gun.AimDrag), 4f, 28f);
+            _gunRotation = MathHelper.Lerp(_gunRotation, WrapAngleNear(_gunRotation, targetRotation), dt * aimLerpSpeed);
+        }
+
         _finalRotation = _gunRotation + _recoilRotation;
         _gunFlip = direction.X < 0;
 
@@ -94,13 +106,40 @@ public class Player
         Health = Math.Max(0f, Health - damage);
         _hitFlashTimer = 0.12f;
         _iFrameTimer = IFrameDuration;
-        if (Health <= 0f) OnDeath?.Invoke();
+        if (Health <= 0f)
+        {
+            SoundManager.Play("humanhit1", 1f, .45f);
+            OnDeath?.Invoke();
+        }
+        else
+        {
+            SoundManager.Play("humanhit1", 1f, 1f);
+        }
     }
 
-    public void ApplyRecoil(Vector2 direction, float strength, float randomRotation)
+    public void ApplyRecoil(Vector2 direction, float distance, float lateralDistance, float recoverySpeed, float rotationKick)
     {
-        _recoilOffset = -direction * strength;
-        _recoilRotation = randomRotation;
+        float recoilTravel = distance * 1.75f;
+        Vector2 sideways = new Vector2(-direction.Y, direction.X);
+        _recoilOffset += -direction * recoilTravel;
+        _recoilOffset += sideways * lateralDistance;
+        float maxRecoilOffset = recoilTravel * 5f;
+        if (_recoilOffset.LengthSquared() > maxRecoilOffset * maxRecoilOffset)
+        {
+            _recoilOffset.Normalize();
+            _recoilOffset *= maxRecoilOffset;
+        }
+
+        _recoilRotation += rotationKick;
+        _recoilRotation = MathHelper.Clamp(_recoilRotation, -0.35f, 0.35f);
+        _recoilRecoverSpeed = recoverySpeed;
+    }
+
+    private static float WrapAngleNear(float current, float target)
+    {
+        while (target - current > MathF.PI) target -= MathF.Tau;
+        while (target - current < -MathF.PI) target += MathF.Tau;
+        return target;
     }
 
     public void Draw(SpriteBatch spriteBatch, Texture2D gunTexture, Gun gun)

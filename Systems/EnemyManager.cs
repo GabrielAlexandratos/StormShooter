@@ -14,14 +14,14 @@ public class EnemyManager
     public Func<Vector2, bool> IsWall { get; set; }
     public BulletManager Bullets { get; set; }
     public ParticleSystem Particles { get; set; }
-    public LightingRenderer Lighting  { get; set; }
+    public LightingRenderer Lighting { get; set; }
     public Random Rng { get; set; } = new();
 
     public event Action<Vector2, Gun, int> OnEnemyDropped;
 
-    private const float DropChance = 0.55f;
+    private const float DropChance = 0.4f;
 
-    private readonly Gun _enemyGun = GunData.EnemyRifle;
+    private readonly Gun _enemyGun = GunData.ScrapRifle;
 
     private bool HasLineOfSight(Vector2 a, Vector2 b)
     {

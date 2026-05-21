@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Xna.Framework.Graphics;
 using Vector2 = Microsoft.Xna.Framework.Vector2;
 using MathHelper = Microsoft.Xna.Framework.MathHelper;
 
@@ -16,8 +17,10 @@ public enum EnemyState
 
 public class EnemyAI
 {
+    private readonly Random _random = new();
+    
     // Movement
-    private const float DetectRadius       = 250f;
+    private const float DetectRadius = 250f;
     private const float PreferredRange = 90f;
     private const float RangeDeadzone = 18f;
     private const float OrbitSpeed = 40f;
@@ -26,21 +29,20 @@ public class EnemyAI
     private const float RepositionSpeed = 45f;
     private const float OrbitFlipInterval = 2f;
     private const float PatrolWaypointDist = 8f;
-    private const float AlertLoseTime      = 5f;
-    private const float LowHealthThreshold = 2f;
+    private const float AlertLoseTime = 5f;
 
     // Shooting
-    private const float ShootInterval    = 1.8f;   // pause between attacks while orbiting
-    private const float ShootIntervalRand= 0.5f;
-    private const float WindUpDuration   = 0.55f;  // how long the telegraph lasts
-    private const float RecoverDuration  = 1.0f;   // how long the post-burst retreat lasts
-    private const int   BurstShotCount   = 3;      // shots per attack
-    private const float BurstShotDelay   = 0.10f;  // delay between shots in the burst
-    private const float AccuracySpread   = 0.20f;  // aim jitter — higher = less accurate at range
+    private const float ShootInterval = 1.8f; // pause between attacks while orbiting
+    private const float ShootIntervalRand = 0.5f;
+    private const float WindUpDuration = 0.55f; // how long the telegraph lasts
+    private const float RecoverDuration = 1.0f; // how long the post-burst retreat lasts
+    private const int BurstShotCount = 4; // shots per attack
+    private const float BurstShotDelay = 0.10f; // delay between shots in the burst
+    private const float AccuracySpread = 0.20f; // aim jitter — higher = less accurate at range
 
     // Aim tracking speeds
-    private const float AimLerpOrbit  = 5f;   // slow tracking while orbiting
-    private const float AimLerpWindUp = 14f;  // fast lock-on during wind-up
+    private const float AimLerpOrbit = 5f; // slow while orbiting
+    private const float AimLerpWindUp = 14f; // fast wind-up
 
     public EnemyState State { get; private set; } = EnemyState.Patrol;
     public float AimAngle { get; private set; }
@@ -51,20 +53,20 @@ public class EnemyAI
     private readonly Func<Vector2, Vector2, bool> _hasLOS;
 
     private Vector2 _patrolWaypoint;
-    private float   _patrolWaypointTimer;
+    private float _patrolWaypointTimer;
     private Vector2 _lastKnownPlayerPos;
-    private float   _losLostTimer;
-    private int     _orbitSign = 1;
-    private float   _orbitFlipTimer;
-    private float   _shootTimer;
-    private float   _windUpTimer;
-    private float   _recoverTimer;
-    private int     _burstRemaining;
-    private float   _burstShotTimer;
+    private float _losLostTimer;
+    private int _orbitSign = 1;
+    private float _orbitFlipTimer;
+    private float _shootTimer;
+    private float _windUpTimer;
+    private float _recoverTimer;
+    private int _burstRemaining;
+    private float _burstShotTimer;
     private Vector2 _repositionTarget;
-    private float   _repositionTimeout;
+    private float _repositionTimeout;
     private Vector2 _lastCheckedPos;
-    private float   _stuckTimer;
+    private float _stuckTimer;
 
     public EnemyAI(Enemy enemy, Random rng, Func<Vector2, bool> isWall, Func<Vector2, Vector2, bool> hasLOS)
     {
@@ -200,12 +202,12 @@ public class EnemyAI
         Vector2 tangent = new Vector2(-toPlayer.Y, toPlayer.X) * _orbitSign;
         float dist = Vector2.Distance(_enemy.Position, playerPos);
         float radialBias = dist < PreferredRange - RangeDeadzone ? -1f
-                         : dist > PreferredRange + RangeDeadzone ?  1f : 0f;
+                         : dist > PreferredRange + RangeDeadzone ? 1f : 0f;
 
         Vector2 moveDir = tangent + toPlayer * (radialBias * 0.6f);
         if (moveDir.LengthSquared() > 0.001f) moveDir.Normalize();
 
-        MoveWithDir(moveDir, OrbitSpeed * (_enemy.Health <= LowHealthThreshold ? 1.35f : 1f), dt);
+        MoveWithDir(moveDir, OrbitSpeed, dt);
     }
 
     private void UpdateWindUp(float dt, Vector2 playerPos)
@@ -243,7 +245,7 @@ public class EnemyAI
     {
         for (int i = 0; i < 20; i++)
         {
-            float angle  = (float)(_rng.NextDouble() * MathF.Tau);
+            float angle = (float)(_rng.NextDouble() * MathF.Tau);
             float radius = 32f + (float)(_rng.NextDouble() * 64f);
             Vector2 candidate = _enemy.Position + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius;
             if (!_isWall(candidate) && _hasLOS(_enemy.Position, candidate))
@@ -263,7 +265,7 @@ public class EnemyAI
 
         for (int i = 0; i < 16; i++)
         {
-            float angle  = baseAngle + MathF.PI + (float)((_rng.NextDouble() * MathF.PI) - MathF.PI * 0.5f);
+            float angle = baseAngle + MathF.PI + (float)((_rng.NextDouble() * MathF.PI) - MathF.PI * 0.5f);
             float radius = 70f + (float)(_rng.NextDouble() * 50f);
             Vector2 candidate = playerPos + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius;
             if (!_isWall(candidate) && _hasLOS(_enemy.Position, candidate))
@@ -283,6 +285,7 @@ public class EnemyAI
     private void FireOneShot(Vector2 playerPos, Action<Vector2, Vector2, float> fireCallback)
     {
         Gun gun = _enemy.Gun;
+        SoundManager.Play(gun.ShotSound, 0.16f, (_random.NextSingle() + 1.5f) * 0.4f);
         int pellets = Math.Max(1, gun.BulletsPerShot);
         float aimJitter = (_rng.NextSingle() - 0.5f) * AccuracySpread * 2f;
 
@@ -300,12 +303,12 @@ public class EnemyAI
     {
         switch (next)
         {
-            case EnemyState.WindUp:     _windUpTimer = WindUpDuration; break;
-            case EnemyState.Recover:    _recoverTimer = RecoverDuration; break;
+            case EnemyState.WindUp: _windUpTimer = WindUpDuration; break;
+            case EnemyState.Recover: _recoverTimer = RecoverDuration; break;
             case EnemyState.Reposition: PickRepositionTarget(_lastKnownPlayerPos); break;
-            case EnemyState.Patrol:     _losLostTimer = 0f; PickNewPatrolWaypoint(); break;
-            case EnemyState.Alert:      _losLostTimer = 0f; break;
-            case EnemyState.Engage:     _losLostTimer = 0f; break;
+            case EnemyState.Patrol: _losLostTimer = 0f; PickNewPatrolWaypoint(); break;
+            case EnemyState.Alert: _losLostTimer = 0f; break;
+            case EnemyState.Engage: _losLostTimer = 0f; break;
         }
         State = next;
     }
@@ -338,12 +341,12 @@ public class EnemyAI
         float angle = MathF.Atan2(checkDir.Y, checkDir.X);
 
         // use whiskers to try and avoid walls
-        bool leftHit  = _isWall(_enemy.Position + new Vector2(MathF.Cos(angle - 0.65f), MathF.Sin(angle - 0.65f)) * 32f);
+        bool leftHit = _isWall(_enemy.Position + new Vector2(MathF.Cos(angle - 0.65f), MathF.Sin(angle - 0.65f)) * 32f);
         bool rightHit = _isWall(_enemy.Position + new Vector2(MathF.Cos(angle + 0.65f), MathF.Sin(angle + 0.65f)) * 32f);
-        bool frontHit = _isWall(_enemy.Position + new Vector2(MathF.Cos(angle),         MathF.Sin(angle))         * 28f);
+        bool frontHit = _isWall(_enemy.Position + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * 28f);
 
-        if (leftHit)  avoid += new Vector2( checkDir.Y, -checkDir.X);
-        if (rightHit) avoid += new Vector2(-checkDir.Y,  checkDir.X);
+        if (leftHit) avoid += new Vector2( checkDir.Y, -checkDir.X);
+        if (rightHit) avoid += new Vector2(-checkDir.Y, checkDir.X);
         if (frontHit && !leftHit && !rightHit) // dont run straight into a wall
             avoid += _orbitSign > 0 ? new Vector2(-checkDir.Y, checkDir.X) : new Vector2(checkDir.Y, -checkDir.X);
 

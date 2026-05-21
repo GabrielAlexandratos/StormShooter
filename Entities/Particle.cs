@@ -15,10 +15,11 @@ public class Particle
 
     public Color Color;
 
-    // slow the particles down
     public float Drag = 0f;
     
     public float Gravity = 0f;
+
+    public bool IsSquare = false;
 
     public void Update(float deltaTime)
     {

@@ -13,61 +13,6 @@
 
 #---------------------------------- Content ---------------------------------#
 
-#begin Sounds/pistolshot.wav
-/importer:WavImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/pistolshot.wav
-
-#begin Sounds/akreload.wav
-/importer:WavImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/akreload.wav
-
-#begin Sounds/dry_fire.wav
-/importer:WavImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/dry_fire.wav
-
-#begin Sounds/unload.wav
-/importer:WavImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/unload.wav
-
-#begin Sounds/snowstep1.wav
-/importer:WavImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/snowstep1.wav
-
-#begin Sounds/snowstep2.wav
-/importer:WavImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/snowstep2.wav
-
-#begin Sounds/snowstep3.wav
-/importer:WavImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/snowstep3.wav
-
-#begin Sounds/humanhit1.wav
-/importer:WavImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/humanhit1.wav
-
-#begin Fonts/HudFont.spritefont
-/importer:FontDescriptionImporter
-/processor:FontDescriptionProcessor
-/processorParam:PremultiplyAlpha=True
-/processorParam:TextureFormat=Compressed
-/build:Fonts/HudFont.spritefont
-
 #begin bullet.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -103,6 +48,13 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:dot_crosshair.png
+
+#begin Fonts/HudFont.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:Fonts/HudFont.spritefont
 
 #begin gun_asval.png
 /importer:TextureImporter
@@ -247,4 +199,76 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:snow_wall_1.png
+
+#begin Sounds/akreload.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/akreload.wav
+
+#begin Sounds/dry_fire.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dry_fire.wav
+
+#begin Sounds/equip.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/equip.wav
+
+#begin Sounds/humanhit1.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/humanhit1.wav
+
+#begin Sounds/pistolshot.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/pistolshot.wav
+
+#begin Sounds/snowimpact1.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/snowimpact1.wav
+
+#begin Sounds/snowimpact2.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/snowimpact2.wav
+
+#begin Sounds/snowstep1.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/snowstep1.wav
+
+#begin Sounds/snowstep2.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/snowstep2.wav
+
+#begin Sounds/snowstep3.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/snowstep3.wav
+
+#begin Sounds/unload.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/unload.wav
+
+#begin Sounds/wind_ambience.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:Sounds/wind_ambience.mp3
 

@@ -42,7 +42,8 @@ public class Game1 : Game
     protected override void Update(GameTime gameTime)
     {
         var kb = Keyboard.GetState();
-        if (kb.IsKeyDown(Keys.Escape)) Exit();
+        if (_currentScene is not GameplayScene && kb.IsKeyDown(Keys.Escape))
+            Exit();
 
         if (_nextScene != null)
         {

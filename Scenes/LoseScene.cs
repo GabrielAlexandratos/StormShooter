@@ -34,7 +34,7 @@ public class LoseScene : Scene
         spriteBatch.Begin(samplerState: SamplerState.PointClamp);
 
         string title = "You Died :(";
-        string sub = "Press Enter to return to menu";
+        string sub = "Press Enter to retry\ntry not to die so quickly next time";
 
         Vector2 titleSize = _font.MeasureString(title) * 2f;
         Vector2 subSize = _font.MeasureString(sub);

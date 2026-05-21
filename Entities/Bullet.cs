@@ -56,7 +56,7 @@ public class Bullet
         Rectangle sourceRect = new Rectangle(texture.Width - visibleWidth, 0, visibleWidth, texture.Height);
 
         float lengthScale = MathHelper.Clamp(speed / 400f, 0.5f, 5.0f) * Scale;
-        float widthScale  = MathHelper.Clamp(speed / 600f, 0.8f, 1.6f) * Scale;
+        float widthScale = MathHelper.Clamp(speed / 600f, 0.8f, 1.6f) * Scale;
         Vector2 stretchedScale = new Vector2(lengthScale, widthScale);
 
         Vector2 origin = new Vector2(visibleWidth, texture.Height / 2f);
@@ -65,7 +65,7 @@ public class Bullet
             texture,
             Position + (Vector2.Normalize(Velocity) * 7f),
             sourceRect,
-            IsEnemy ? new Color(255, 180, 40) : Color.White,
+            Color.White,
             rotation,
             origin,
             stretchedScale,

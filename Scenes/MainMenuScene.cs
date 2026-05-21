@@ -12,13 +12,12 @@ public class MainMenuScene : Scene
 
     public override void LoadContent()
     {
-        _menuCrosshair = Game.Content.Load<Texture2D>("circle_crosshair");   
+        _menuCrosshair = Game.Content.Load<Texture2D>("circle_crosshair");
     }
 
     public override void Update(GameTime gameTime)
     {
         var kb = Keyboard.GetState();
-
         if (kb.IsKeyDown(Keys.Enter))
         {
             Game.ChangeScene(new GameplayScene(Game));

@@ -7,7 +7,7 @@ public class Settings
     public const int VirtualHeight = 270;
 
     // Player settings
-    public const int PlayerSpeed = 70;
+    public const int PlayerSpeed = 60;
     public const float EnemyHitShakeDuration = 0.05f;
 
     public const int TileSize = 10;
