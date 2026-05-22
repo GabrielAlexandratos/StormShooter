@@ -70,6 +70,7 @@ public class GunController
         Gun gun,
         BulletManager bulletManager,
         LightingRenderer lighting,
+        PersistentParticleSystem casings,
         ref float shakeTime,
         ref float shakeStrength,
         ref Vector2 shakeOffset)
@@ -108,7 +109,7 @@ public class GunController
             _burstTimer -= dt;
             if (_burstTimer <= 0f && _burstShotsRemaining > 0)
             {
-                Fire(player, gun, mouseWorld, bulletManager, lighting, ref shakeTime, ref shakeStrength, ref shakeOffset);
+                Fire(player, gun, mouseWorld, bulletManager, lighting, casings, ref shakeTime, ref shakeStrength, ref shakeOffset);
                 _burstTimer = gun.BurstDelay;
                 if (--_burstShotsRemaining <= 0) _isBursting = false;
             }
@@ -133,7 +134,7 @@ public class GunController
                 }
                 else
                 {
-                    Fire(player, gun, mouseWorld, bulletManager, lighting, ref shakeTime, ref shakeStrength, ref shakeOffset);
+                    Fire(player, gun, mouseWorld, bulletManager, lighting, casings, ref shakeTime, ref shakeStrength, ref shakeOffset);
                 }
 
                 _shotCooldown = 1f / gun.FireRate;
@@ -154,6 +155,7 @@ public class GunController
         Vector2 mouseWorld,
         BulletManager bulletManager,
         LightingRenderer lighting,
+        PersistentParticleSystem casings,
         ref float shakeTime,
         ref float shakeStrength,
         ref Vector2 shakeOffset)
@@ -196,6 +198,8 @@ public class GunController
             );
             lighting.AddFlash(muzzlePos, 40f, Color.White, 0.06f);
         }
+
+        casings.Spawn(player.GetMuzzleWorld(gun), PersistentParticleConfig.Casing, _random);
 
         float shotFeedbackScale = 1f + (gun.BulletsPerShot - 1) * 0.08f;
 

@@ -48,6 +48,7 @@ public class BulletManager
         float dt,
         List<Enemy> enemies,
         ParticleSystem particles,
+        PersistentParticleSystem persistentParticles,
         LightingRenderer lighting,
         Gun currentGun,
         ref float hitStopTime,
@@ -105,6 +106,8 @@ public class BulletManager
                     SpawnHitParticles(particles, random, player.Position,
                         b.Velocity.LengthSquared() > 0f ? Vector2.Normalize(b.Velocity) : Vector2.UnitX,
                         new Color(255, 200, 80));
+                    for (int part = 0; part < 12; part++)
+                        persistentParticles.Spawn(player.Position, PersistentParticleConfig.Blood, random);
                     bulletHit = true;
                 }
             }
@@ -146,6 +149,13 @@ public class BulletManager
                     {
                         hitStopTime = currentGun.HitStop;
                         SpawnDeathParticles(particles, random, e.Position);
+                        for (int part = 0; part < 14; part++)
+                            persistentParticles.Spawn(e.Position, PersistentParticleConfig.Blood, random);
+                    }
+                    else
+                    {
+                        for (int part = 0; part < 7; part++)
+                            persistentParticles.Spawn(e.Position, PersistentParticleConfig.Blood, random);
                     }
 
                     SpawnHitParticles(particles, random, e.Position, dir, new Color(220, 30, 30));

@@ -36,8 +36,10 @@ public class GameplayScene : Scene
     private float _zoom = 1f;
     private float _vignetteAlpha = 0f;
     private Texture2D _vignetteTexture;
+    private Texture2D _circleTexture;
 
     private ParticleSystem _particles = new();
+    private PersistentParticleSystem _casings = new();
     private EnemyManager _enemyManager;
     private LightingRenderer _lighting;
     private KeyboardState _previousKb;
@@ -93,6 +95,19 @@ public class GameplayScene : Scene
             }
         }
         _vignetteTexture.SetData(vignPixels);
+
+        int cr = 8;
+        _circleTexture = new Texture2D(Game.GraphicsDevice, cr * 2, cr * 2);
+        var circlePixels = new Color[cr * 2 * cr * 2];
+        Vector2 circleCenter = new Vector2(cr - 0.5f, cr - 0.5f);
+        for (int y = 0; y < cr * 2; y++)
+            for (int x = 0; x < cr * 2; x++)
+            {
+                float dist = Vector2.Distance(new Vector2(x, y), circleCenter);
+                float a = MathHelper.Clamp(cr - dist, 0f, 1f);
+                circlePixels[y * cr * 2 + x] = Color.White * a;
+            }
+        _circleTexture.SetData(circlePixels);
 
         // placeholder ammo drop sprite
         _dropSprite = new Texture2D(Game.GraphicsDevice, 16, 8);
@@ -232,9 +247,10 @@ public class GameplayScene : Scene
             SwitchGun();
         }
         
-        _gunController.Update(dt, mouse, kb, _previousKb, mouseWorld, _player, _currentGun, _bulletManager, _lighting, ref _shakeTime, ref _shakeStrength, ref _shakeOffset);
-        _bulletManager.Update(dt, _enemyManager.Enemies, _particles, reloading ? null : _lighting, _currentGun, ref _hitStopTime, ref _shakeTime, ref _shakeStrength, VirtualWidth, VirtualHeight, _random, IsWall, _player);
+        _gunController.Update(dt, mouse, kb, _previousKb, mouseWorld, _player, _currentGun, _bulletManager, _lighting, _casings, ref _shakeTime, ref _shakeStrength, ref _shakeOffset);
+        _bulletManager.Update(dt, _enemyManager.Enemies, _particles, _casings, reloading ? null : _lighting, _currentGun, ref _hitStopTime, ref _shakeTime, ref _shakeStrength, VirtualWidth, VirtualHeight, _random, IsWall, _player);
         _particles.Update(dt);
+        _casings.Update(dt);
 
         // Update dropped guns and handle pickup interaction
         bool fHeld = kb.IsKeyDown(Keys.F);
@@ -318,6 +334,7 @@ public class GameplayScene : Scene
                 Color.White);
         }
 
+        _casings.Draw(spriteBatch, _pixel, _circleTexture);
         _player.Draw(spriteBatch, GetGunTexture(_currentGun), _currentGun);
         _enemyManager.Draw(spriteBatch, _pixel);
         _bulletManager.Draw(spriteBatch, _bulletTexture);
@@ -450,6 +467,7 @@ public class GameplayScene : Scene
         _lighting?.Dispose();
         _renderTarget?.Dispose();
         _pixel?.Dispose();
+        _circleTexture?.Dispose();
         _dropSprite?.Dispose();
         _vignetteTexture?.Dispose();
         base.UnloadContent();
