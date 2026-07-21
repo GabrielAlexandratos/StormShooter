@@ -30,6 +30,7 @@ public class Gun
     public bool CanBounce = false; // can the bullets bounce
     public int MaxBounces = 0; // how many times can they bounce before despawning
     public string SpriteName = "gun_smg";
+    public string DroppedSpriteName = "";
     public Vector2 SpriteOrigin = new Vector2(1f, 4f); // offseting the sprite so that it looks more natural to be held
     public Vector2 MuzzleOffset = new Vector2(15f, -1f); // positioning the fire point
     public float SpriteScale = 1f;

@@ -27,14 +27,13 @@ public class LightingRenderer
 {
     private RenderTarget2D _lightMap;
     private Texture2D _circleHard; // solid circle
-    private Texture2D _glow; // soft edge circle
 
     private readonly GraphicsDevice _gd;
 
     private readonly List<LightSource> _lights = new();
 
     public float PlayerRadius { get; set; } = 60f;
-    public float DimMultiplier { get; set; } = 2.5f; // outer fade zone
+    public float DimMultiplier { get; set; } = 2.5f; 
     public float DimBrightness { get; set; } = 0.35f;
 
     // Blending to prevent stacking brightness with multiple light sources, keeps the highest value only
@@ -54,7 +53,6 @@ public class LightingRenderer
 
         _lightMap = new RenderTarget2D(gd, virtualW, virtualH);
         _circleHard = BuildCircle(gd, 512);
-        _glow = BuildGlow(gd, 512);
     }
 
     private static Texture2D BuildCircle(GraphicsDevice gd, int size)
@@ -71,31 +69,6 @@ public class LightingRenderer
         {
             float dist = MathF.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
             px[y * size + x] = dist <= r ? Color.White : Color.Transparent;
-        }
-
-        var tex = new Texture2D(gd, size, size);
-        tex.SetData(px);
-        return tex;
-    }
-
-    private static Texture2D BuildGlow(GraphicsDevice gd, int size)
-    {
-        // Soft edge circle for glow
-        float cx = size / 2f;
-        float cy = size / 2f;
-        float r = size / 2f;
-
-        var px = new Color[size * size];
-
-        for (int y = 0; y < size; y++)
-        for (int x = 0; x < size; x++)
-        {
-            float dist = MathF.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
-            float t = MathHelper.Clamp(1f - (dist / r), 0f, 1f);
-
-            t *= t;
-
-            px[y * size + x] = new Color((float)255, 255, 255, (byte)(t * 255f));
         }
 
         var tex = new Texture2D(gd, size, size);
@@ -137,42 +110,19 @@ public class LightingRenderer
         DrawCircle(
             sb,
             playerPos - cameraPos,
-            PlayerRadius * DimMultiplier,
+            PlayerRadius * 3f,
             new Color(DimBrightness, DimBrightness, DimBrightness, 1f)
         );
         
-        // Full brightness zone around player
+        // draw player light
         DrawCircle(sb, playerPos - cameraPos, PlayerRadius, Color.White);
-
-        // only white lights affect visibility
+        // draw other lights
         foreach (var l in _lights)
         {
-            if (l.Tint != Color.White)
-                continue;
-
-            // might use fade for something
-            float a = l.Lifetime < 0f
-                ? 1f
-                : MathHelper.Clamp(l.Lifetime / l.MaxLifetime, 0f, 1f);
-
             DrawCircle(sb, l.Position - cameraPos, l.Radius, Color.White);
-        }
-
-        sb.End();
-
-        // Coloured glow
-        sb.Begin(blendState: BlendState.Additive, samplerState: SamplerState.PointClamp);
-
-        foreach (var l in _lights)
-        {
-            if (l.Tint == Color.White)
-                continue;
-
-            float a = l.Lifetime < 0f
-                ? 1f
-                : MathHelper.Clamp(l.Lifetime / l.MaxLifetime, 0f, 1f);
-
-            DrawGlow(sb, l.Position - cameraPos, l.Radius, l.Tint, a);
+            DrawCircle(
+                sb, l.Position - cameraPos, l.Radius * 3f, new Color(DimBrightness, DimBrightness, DimBrightness, 1f)
+            );
         }
 
         sb.End();
@@ -189,19 +139,9 @@ public class LightingRenderer
         sb.Draw(_circleHard, pos, null, color, 0f, origin, scale, SpriteEffects.None, 0f);
     }
 
-    private void DrawGlow(SpriteBatch sb, Vector2 pos, float radius, Color tint, float alpha)
-    {
-        var origin = new Vector2(_glow.Width / 2f, _glow.Height / 2f);
-        float scale = (radius * 2f) / _glow.Width;
-
-        var color = new Color(tint.R, tint.G, tint.B, (int)(alpha * 255f));
-        sb.Draw(_glow, pos, null, color, 0f, origin, scale, SpriteEffects.None, 0f);
-    }
-
     public void Dispose()
     {
         _lightMap?.Dispose();
         _circleHard?.Dispose();
-        _glow?.Dispose();
     }
 }

@@ -25,6 +25,8 @@ public class Game1 : Game
         Graphics.PreferredBackBufferHeight = Settings.VirtualHeight * initialScale;
         Graphics.ApplyChanges();
         Window.AllowUserResizing = true;
+
+        Window.Title = "Rogue Reload";
     }
 
     public void ChangeScene(Scene scene)

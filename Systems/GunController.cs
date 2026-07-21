@@ -20,6 +20,7 @@ public class GunController
     private readonly Dictionary<Gun, int> _ammoPool = new();
     private float _reloadTimer;
     public int GetCurrentAmmo(Gun gun) => _ammoPool.GetValueOrDefault(gun, (int)gun.MagSize);
+    public void SetMagAmmo(Gun gun, int amount) => _ammoPool[gun] = Math.Clamp(amount, 0, (int)gun.MagSize);
 
     public float ReloadProgress => _reloadTimer;
     public bool IsReloading => _reloadTimer > 0f;
@@ -71,9 +72,7 @@ public class GunController
         BulletManager bulletManager,
         LightingRenderer lighting,
         PersistentParticleSystem casings,
-        ref float shakeTime,
-        ref float shakeStrength,
-        ref Vector2 shakeOffset)
+        ref ScreenFeedback feedback)
     {
         if (!_ammoPool.ContainsKey(gun))
             _ammoPool[gun] = (int)gun.MagSize;
@@ -109,7 +108,7 @@ public class GunController
             _burstTimer -= dt;
             if (_burstTimer <= 0f && _burstShotsRemaining > 0)
             {
-                Fire(player, gun, mouseWorld, bulletManager, lighting, casings, ref shakeTime, ref shakeStrength, ref shakeOffset);
+                Fire(player, gun, mouseWorld, bulletManager, lighting, casings, ref feedback);
                 _burstTimer = gun.BurstDelay;
                 if (--_burstShotsRemaining <= 0) _isBursting = false;
             }
@@ -134,7 +133,7 @@ public class GunController
                 }
                 else
                 {
-                    Fire(player, gun, mouseWorld, bulletManager, lighting, casings, ref shakeTime, ref shakeStrength, ref shakeOffset);
+                    Fire(player, gun, mouseWorld, bulletManager, lighting, casings, ref feedback);
                 }
 
                 _shotCooldown = 1f / gun.FireRate;
@@ -156,9 +155,7 @@ public class GunController
         BulletManager bulletManager,
         LightingRenderer lighting,
         PersistentParticleSystem casings,
-        ref float shakeTime,
-        ref float shakeStrength,
-        ref Vector2 shakeOffset)
+        ref ScreenFeedback feedback)
     {
         _ammoPool[gun]--;
 
@@ -187,7 +184,7 @@ public class GunController
                 decayVariation = (_random.NextSingle() * 0.8f) - 0.4f;
             }
 
-            SoundManager.Play(gun.ShotSound, 0.19f, (_random.NextSingle() - 0.5f) * 0.4f);
+            SoundManager.Play(gun.ShotSound, 0.19f, (_random.NextSingle() - 0.55f) * 0.4f);
             bulletManager.Spawn(
                 muzzlePos,
                 shootDir * gun.BulletSpeed * speedMultiplier,
@@ -203,9 +200,9 @@ public class GunController
 
         float shotFeedbackScale = 1f + (gun.BulletsPerShot - 1) * 0.08f;
 
-        shakeOffset += -direction * gun.CameraKickDistance * shotFeedbackScale;
-        shakeStrength = 0f;
-        shakeTime = 0f;
+        feedback.ShakeOffset += -direction * gun.CameraKickDistance * shotFeedbackScale;
+        feedback.ShakeStrength = 0f;
+        feedback.ShakeTime = 0f;
 
         float lateralDirection = (_recoilPhase++ % 2 == 0) ? 1f : -1f;
         float alternatingRotationKick = lateralDirection * (0.01f + gun.RecoilRotationKick * 0.008f) * shotFeedbackScale;
@@ -219,5 +216,15 @@ public class GunController
     public void CancelReload()
     {
         _reloadTimer = 0f;
+    }
+
+    public void ApplyFromRunState(RunState state)
+    {
+        _lightAmmo = state.LightAmmo;
+        _mediumAmmo = state.MediumAmmo;
+        _heavyAmmo = state.HeavyAmmo;
+        _ammoPool.Clear();
+        foreach (var entry in state.MagAmmo)
+            _ammoPool[entry.Key] = entry.Value;
     }
 }

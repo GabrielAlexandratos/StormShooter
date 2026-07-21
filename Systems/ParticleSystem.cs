@@ -42,7 +42,6 @@ public class ParticleSystem
 
             float speed = p.Velocity.Length();
 
-            // Stretch based on speed
             float length = p.IsSquare ? 1f : 1f + MathF.Min(speed * 0.006f, 3.5f);
             float width = 0.55f;
 

@@ -9,8 +9,8 @@ namespace StormShooter;
 public static class SoundManager
 {
     private static readonly Dictionary<string, SoundEffect> _sounds = new();
+    private static readonly Dictionary<string, Song> _songs = new();
     private static readonly Random _rng = new();
-    private static Song _music;
 
     public static void Load(ContentManager content)
     {
@@ -26,8 +26,9 @@ public static class SoundManager
         TryLoad(content, "snowimpact1", "Sounds/snowimpact1");
         TryLoad(content, "snowimpact2", "Sounds/snowimpact2");
 
-        try { _music = content.Load<Song>("Sounds/wind_ambience"); }
-        catch { _music = null; }
+        TryLoadSong(content, "wind_ambience", "Sounds/wind_ambience");
+        TryLoadSong(content, "light_rain", "Sounds/light_rain");
+        TryLoadSong(content, "heavy_rain", "Sounds/heavy_rain");
     }
 
     public static void Play(string name, float volume = 1f, float pitch = 0f, float pan = 0f)
@@ -42,18 +43,16 @@ public static class SoundManager
         Play(names[_rng.Next(names.Length)], volume, pitch);
     }
 
-    public static void PlayWindAmbience(float volume = 1f)
+    public static void PlayAmbience(string name, float volume = 1f)
     {
-        if (_music == null)
-            return;
-
+        if (!_songs.TryGetValue(name, out var song) || song == null) return;
         MediaPlayer.IsRepeating = true;
-        MediaPlayer.Volume = volume;
-        if (MediaPlayer.Queue.ActiveSong != _music || MediaPlayer.State != MediaState.Playing)
-            MediaPlayer.Play(_music);
+        MediaPlayer.Volume = volume - 0.25f;
+        if (MediaPlayer.Queue.ActiveSong == song && MediaPlayer.State == MediaState.Playing) return;
+        MediaPlayer.Play(song);
     }
 
-    public static void StopWindAmbience()
+    public static void StopAmbience()
     {
         if (MediaPlayer.State != MediaState.Stopped)
             MediaPlayer.Stop();
@@ -62,6 +61,12 @@ public static class SoundManager
     private static void TryLoad(ContentManager content, string key, string path)
     {
         try { _sounds[key] = content.Load<SoundEffect>(path); }
+        catch { }
+    }
+
+    private static void TryLoadSong(ContentManager content, string key, string path)
+    {
+        try { _songs[key] = content.Load<Song>(path); }
         catch { }
     }
 }

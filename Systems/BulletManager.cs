@@ -7,13 +7,11 @@ namespace StormShooter;
 
 public class BulletManager
 {
-    private readonly Random _random = new();
-    
+    private readonly Random _rng = new();
+
     private readonly List<Bullet> _bullets = new();
 
     private const int TileSize = Settings.TileSize;
-    
-    public Random Rng { get; set; } = new();
 
     public void Spawn(Vector2 position, Vector2 velocity, float decay = 0f, float minSpeed = 0f, float scale = 1f, int bounces = 0)
     {
@@ -51,12 +49,7 @@ public class BulletManager
         PersistentParticleSystem persistentParticles,
         LightingRenderer lighting,
         Gun currentGun,
-        ref float hitStopTime,
-        ref float shakeTime,
-        ref float shakeStrength,
-        int virtualWidth,
-        int virtualHeight,
-        Random random,
+        ref ScreenFeedback feedback,
         Func<Vector2, bool> isWall,
         Player player = null)
     {
@@ -67,34 +60,14 @@ public class BulletManager
 
             b.Update(dt);
 
-            if (!b.IsAlive || b.IsBulletOffScreen(virtualWidth * 20, virtualHeight * 20))
+            if (!b.IsAlive || b.IsBulletOffScreen(Settings.VirtualWidth * 20, Settings.VirtualHeight * 20))
             {
                 _bullets.RemoveAt(i);
                 continue;
             }
 
-            HitResult hit = TraceRay(frameStart, b.Position, isWall);
-            if (hit.DidHit)
-            {
-                SpawnDustParticles(particles, random, hit.SafePosition,
-                    b.Velocity.LengthSquared() > 0f ? Vector2.Normalize(b.Velocity) : Vector2.UnitX,
-                    new Color(140, 140, 140));
-                SoundManager.PlayRandom(0.1f, (_random.NextSingle() - 0.5f) * 0.08f, "snowimpact1", "snowimpact2");
-                if (b.BouncesRemaining > 0)
-                {
-                    b.Velocity = ReflectVelocity(b.Velocity, hit.Normal);
-                    b.Position = hit.SafePosition;
-                    b.BouncesRemaining--;
-                }
-                else
-                {
-                    _bullets.RemoveAt(i);
-                    continue;
-                }
-            }
-
-            _bullets[i] = b;
-
+            HitResult wallHit = TraceRay(frameStart, b.Position, isWall);
+            float wallT = wallHit.DidHit ? wallHit.T : float.MaxValue;
             bool bulletHit = false;
 
             if (b.IsEnemy && player != null)
@@ -103,11 +76,11 @@ public class BulletManager
                 if (SweptCircleHit(frameStart, b.Position, player.Position, combinedRadius))
                 {
                     player.Hit(b.Damage * 10f);
-                    SpawnHitParticles(particles, random, player.Position,
+                    SpawnHitParticles(particles, _rng, player.Position,
                         b.Velocity.LengthSquared() > 0f ? Vector2.Normalize(b.Velocity) : Vector2.UnitX,
                         new Color(255, 200, 80));
                     for (int part = 0; part < 12; part++)
-                        persistentParticles.Spawn(player.Position, PersistentParticleConfig.Blood, random);
+                        persistentParticles.Spawn(player.Position, PersistentParticleConfig.Blood, _rng);
                     bulletHit = true;
                 }
             }
@@ -127,49 +100,67 @@ public class BulletManager
                     if (travelDist > 0.001f)
                         adjustedTip -= (travelDir / travelDist) * (combinedRadius * 0.6f);
 
-                    if (!SweptCircleHit(frameStart, adjustedTip, e.Position, combinedRadius))
+                    float enemyT = SweptCircleHitT(frameStart, adjustedTip, e.Position, combinedRadius);
+                    if (enemyT >= wallT)
                         continue;
 
                     Vector2 dir = b.Velocity.LengthSquared() > 0f ? Vector2.Normalize(b.Velocity) : Vector2.UnitX;
                     float impact = b.Velocity.Length();
 
-                    float capturedShakeTime = 0;
-                    float capturedShakeStrength = 0;
-
-                    e.Hit(dir * 15f, bulletDamage, impact, (t, s) =>
-                    {
-                        capturedShakeTime = t;
-                        capturedShakeStrength = s;
-                    }, currentGun.HitShakeStrength);
-
-                    shakeTime = capturedShakeTime;
-                    shakeStrength = capturedShakeStrength;
+                    float shakeTime = 0f, shakeStrength = 0f;
+                    e.Hit(dir * 15f, bulletDamage, impact, (t, s) => { shakeTime = t; shakeStrength = s; }, currentGun.HitShakeStrength);
+                    feedback.ShakeTime = shakeTime;
+                    feedback.ShakeStrength = shakeStrength;
 
                     if (e.IsDead())
                     {
-                        hitStopTime = currentGun.HitStop;
-                        SpawnDeathParticles(particles, random, e.Position);
+                        feedback.HitStopTime = currentGun.HitStop;
+                        SpawnDeathParticles(particles, _rng, e.Position);
                         for (int part = 0; part < 14; part++)
-                            persistentParticles.Spawn(e.Position, PersistentParticleConfig.Blood, random);
+                            persistentParticles.Spawn(e.Position, PersistentParticleConfig.Blood, _rng);
                     }
                     else
                     {
                         for (int part = 0; part < 7; part++)
-                            persistentParticles.Spawn(e.Position, PersistentParticleConfig.Blood, random);
+                            persistentParticles.Spawn(e.Position, PersistentParticleConfig.Blood, _rng);
                     }
 
-                    SpawnHitParticles(particles, random, e.Position, dir, new Color(220, 30, 30));
-                    SoundManager.Play("humanhit1", 0.5f, (float)(Rng.NextDouble() - 0.5) * 0.3f);
+                    SpawnHitParticles(particles, _rng, e.Position, dir, new Color(220, 30, 30));
+                    SoundManager.Play("humanhit1", 0.5f, (float)(_rng.NextDouble()) * 0.3f);
 
                     bulletHit = true;
                     break;
                 }
             }
 
+            if (!bulletHit && wallHit.DidHit)
+            {
+                SpawnDustParticles(particles, _rng, wallHit.SafePosition - wallHit.Normal * 2f, wallHit.Normal, new Color(140, 140, 140));
+                float debrisAngle = MathF.Atan2(wallHit.Normal.Y, wallHit.Normal.X);
+                Vector2 debrisOrigin = wallHit.SafePosition + wallHit.Normal * 3f;
+                int debrisCount = 1 + _rng.Next(2);
+                for (int d = 0; d < debrisCount; d++)
+                    persistentParticles.Spawn(debrisOrigin, PersistentParticleConfig.WallDebris, _rng, debrisAngle);
+                SoundManager.PlayRandom(0.1f, (_rng.NextSingle() - 0.5f) * 0.08f, "snowimpact1", "snowimpact2");
+                if (b.BouncesRemaining > 0)
+                {
+                    b.Velocity = ReflectVelocity(b.Velocity, wallHit.Normal);
+                    b.Position = wallHit.SafePosition;
+                    b.BouncesRemaining--;
+                }
+                else
+                {
+                    bulletHit = true;
+                }
+            }
+
             if (bulletHit)
                 _bullets.RemoveAt(i);
             else
+            {
+                _bullets[i] = b;
                 lighting?.AddLight(new LightSource(b.Position, 20f, Color.White, 0.04f));
+            }
         }
     }
 
@@ -219,7 +210,7 @@ public class BulletManager
     {
         for (int particle = 0; particle < 4 + random.Next(2); particle++)
         {
-            float angle = MathF.Atan2(dir.Y, dir.X) + MathF.PI + (random.NextSingle() - 0.5f) * 1.6f;
+            float angle = MathF.Atan2(dir.Y, dir.X) + (random.NextSingle() - 0.5f) * 1.6f;
             float speed = 120f + random.NextSingle() * 380f;
             particles.Add(new Particle
             {
@@ -239,6 +230,11 @@ public class BulletManager
 
     private static bool SweptCircleHit(Vector2 from, Vector2 to, Vector2 center, float radius)
     {
+        return SweptCircleHitT(from, to, center, radius) < float.MaxValue;
+    }
+
+    private static float SweptCircleHitT(Vector2 from, Vector2 to, Vector2 center, float radius)
+    {
         Vector2 d = to - from;
         Vector2 f = from - center;
 
@@ -246,16 +242,19 @@ public class BulletManager
         float b = 2f * Vector2.Dot(f, d);
         float c = Vector2.Dot(f, f) - radius * radius;
 
-        if (a < 1e-10f) return c <= 0f;
+        if (a < 1e-10f) return c <= 0f ? 0f : float.MaxValue;
 
         float discriminant = b * b - 4f * a * c;
-        if (discriminant < 0f) return false;
+        if (discriminant < 0f) return float.MaxValue;
 
         float sqrtDisc = MathF.Sqrt(discriminant);
         float t0 = (-b - sqrtDisc) / (2f * a);
         float t1 = (-b + sqrtDisc) / (2f * a);
 
-        return t0 <= 1f && t1 >= 0f;
+        if (t0 <= 1f && t1 >= 0f)
+            return MathF.Max(0f, t0);
+
+        return float.MaxValue;
     }
 
     private struct HitResult
@@ -263,6 +262,7 @@ public class BulletManager
         public bool DidHit;
         public Vector2 SafePosition;
         public Vector2 Normal;
+        public float T;
     }
 
     private static HitResult TraceRay(Vector2 from, Vector2 to, Func<Vector2, bool> isWall)
@@ -311,7 +311,8 @@ public class BulletManager
                     {
                         DidHit = true,
                         SafePosition = new Vector2(from.X + (to.X - from.X) * tHit, from.Y + (to.Y - from.Y) * tHit),
-                        Normal = normal
+                        Normal = normal,
+                        T = tHit
                     };
                 }
             }

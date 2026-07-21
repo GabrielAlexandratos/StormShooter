@@ -7,8 +7,11 @@
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/bullet.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/crosshair.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/dot_crosshair.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/enemy_idle.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/enemy_walk.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/Fonts/HudFont.spritefont</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_asval.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_pistol.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_scraprifle.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_shotgun.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/gun_smg.png</File>
@@ -20,10 +23,19 @@
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/snow_floor_2.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/snow_wall_0.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/snow_wall_1.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/snowFloor1.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/snowFloor2.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/snowFloor3.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/snowFloor4.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/snowFloor5.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/snowFloor6.png</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/snowFloor7.png</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/akreload.wav</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/dry_fire.wav</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/equip.wav</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/heavy_rain.mp3</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/humanhit1.wav</File>
+    <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/light_rain.mp3</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/pistolshot.wav</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/snowimpact1.wav</File>
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/snowimpact2.wav</File>
@@ -34,6 +46,18 @@
     <File>/Users/gabriel/RiderProjects/StormShooter/Content/Sounds/wind_ambience.mp3</File>
   </SourceFiles>
   <DestFiles>
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />

@@ -58,7 +58,7 @@ public class EnemySpawner
             Vector2 pos = new Vector2(tx * _tileSize + _tileSize / 2f, ty * _tileSize + _tileSize / 2f);
             if (!IsFarFromOthers(pos, manager)) continue;
 
-            manager.AddEnemy(pos, EnemyType.Basic, GunData.EnemyVAL);
+            manager.AddEnemy(pos, EnemyType.Basic, GunData.PickRandomEnemyGun(manager.Rng));
             spawned++;
         }
     }

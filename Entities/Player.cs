@@ -24,14 +24,12 @@ public class Player
     private bool _isMoving = false;
 
     public int[] FootstepFrames = { 1, 4 };
-    public Action OnFootstep;
+    public Action<Vector2> OnFootstep;
+    private Vector2 _lastMoveDir = Vector2.UnitX;
     public float SpeedMultiplier = 1f;
 
     public float MaxHealth = 60f;
     public float Health;
-    public float IFrameDuration = 0.8f;
-    private float _iFrameTimer;
-    private float _hitFlashTimer;
     public bool IsAlive => Health > 0f;
     public Action OnDeath;
 
@@ -47,7 +45,7 @@ public class Player
         _walkAnim.OnFrameChanged += frame =>
         {
             if (_isMoving && Array.IndexOf(FootstepFrames, frame) >= 0)
-                OnFootstep?.Invoke();
+                OnFootstep?.Invoke(_lastMoveDir);
         };
     }
 
@@ -63,6 +61,7 @@ public class Player
         
         bool wasMoving = _isMoving;
         _isMoving = move != Vector2.Zero;
+        if (_isMoving) _lastMoveDir = Vector2.Normalize(move);
 
         if (_isMoving != wasMoving)
         {
@@ -86,7 +85,7 @@ public class Player
         }
         else
         {
-            float aimLerpSpeed = MathHelper.Clamp(22f / Math.Max(0.2f, gun.AimDrag), 4f, 28f);
+            float aimLerpSpeed = MathHelper.Clamp(22f / Math.Max(0.2f, gun.AimDrag), 0f, 900f);
             _gunRotation = MathHelper.Lerp(_gunRotation, WrapAngleNear(_gunRotation, targetRotation), dt * aimLerpSpeed);
         }
 
@@ -96,16 +95,12 @@ public class Player
         _recoilOffset = Vector2.Lerp(_recoilOffset, Vector2.Zero, dt * _recoilRecoverSpeed);
         _recoilRotation = MathHelper.Lerp(_recoilRotation, 0f, dt * _recoilRecoverSpeed);
 
-        if (_iFrameTimer > 0f) _iFrameTimer -= dt;
-        if (_hitFlashTimer > 0f) _hitFlashTimer -= dt;
     }
 
     public void Hit(float damage)
     {
-        if (_iFrameTimer > 0f || !IsAlive) return;
+        if (!IsAlive) return;
         Health = Math.Max(0f, Health - damage);
-        _hitFlashTimer = 0.12f;
-        _iFrameTimer = IFrameDuration;
         if (Health <= 0f)
         {
             SoundManager.Play("humanhit1", 1f, .45f);
@@ -147,6 +142,12 @@ public class Player
         //Vector2 gunDrawPos = new Vector2(MathF.Round(_gunPos.X), MathF.Round(_gunPos.Y));
         Vector2 gunDrawPos = _gunPos;
         
+        Rectangle? sourceRect = _currentAnim.GetSourceRect();
+
+        Color spriteColor = Color.White;
+
+        spriteBatch.Draw(_currentAnim.Texture, Position, sourceRect, spriteColor, 0f, new Vector2(_currentAnim.FrameWidth / 2, _currentAnim.FrameHeight / 2), new Vector2(1f, 1f), _gunFlip ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0f);
+
         if (gunTexture.Width == 1 && gunTexture.Height == 1)
         {
             spriteBatch.Draw(gunTexture, gunDrawPos, null, Color.Red, _finalRotation,
@@ -163,18 +164,6 @@ public class Player
                 drawOrigin, gun.SpriteScale,
                 _gunFlip ? SpriteEffects.FlipVertically : SpriteEffects.None, 0f);
         }
-        
-        Rectangle? sourceRect = _currentAnim.GetSourceRect();
-
-        Color spriteColor;
-        if (_hitFlashTimer > 0f)
-            spriteColor = Color.Red;
-        else if (_iFrameTimer > 0f)
-            spriteColor = Color.White * (MathF.Sin(_iFrameTimer * 40f) > 0f ? 1f : 0.3f);
-        else
-            spriteColor = Color.White;
-
-        spriteBatch.Draw(_currentAnim.Texture, Position, sourceRect, spriteColor, 0f, new Vector2(_currentAnim.FrameWidth / 2, _currentAnim.FrameHeight / 2), new Vector2(1f, 1f), _gunFlip ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0f);
    }
     
     public Vector2 GetMuzzleWorld(Gun gun)

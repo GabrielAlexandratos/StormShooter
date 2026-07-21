@@ -1,20 +1,53 @@
-namespace StormShooter;
-
+using System;
 using Microsoft.Xna.Framework;
+
+namespace StormShooter;
 
 public class GunData
 {
+    public static Gun Pistol = new Gun
+    {
+        AmmoType = AmmoType.Light,
+        SpriteName = "gun_pistol",
+        DroppedSpriteName = "gun_pistol_drop",
+        SpriteOrigin = new Vector2(-5f, 3f),
+        MuzzleOffset = new Vector2(-1.5f, 0f),
+        Damage = 2f,
+        MagSize = 13f,
+        ReloadTime = 1f,
+        FireRate = 10f,
+        BulletSpeed = 1600f,
+        VelocityDecay = 0f,
+        MinBulletSpeed = 0f,
+        BulletScale = 0.6f,
+        HitStop = 0.07f,
+        Automatic = false,
+        UseSpeedVariation = false,
+        HitShakeStrength = 2.6f,
+        CameraKickDistance = 3.4f,
+        BulletsPerShot = 1,
+        SpreadAngle = 0.17f,
+        BurstCount = 0,
+        BurstDelay = 0f,
+        RecoilRotationKick = 5.8f,
+        RecoilReturnSpeed = 8.5f,
+        EquippedMoveSpeedMultiplier = 1f,
+        AimDrag = 1f,
+        CanBounce = false,
+    };
+    
     // SMGs
     public static Gun VAL = new Gun
     {
         AmmoType = AmmoType.Light,
         SpriteName = "gun_asval",
+        DroppedSpriteName = "gun_asval_drop",
         SpriteOrigin = new Vector2(1f, 4f),
         MuzzleOffset = new Vector2(18f, -1f),
         Damage = 1.5f,
         MagSize = 15f,
         ReloadTime = 1.5f,
-        FireRate = 15f,
+        FireRate = 12.5f,
         BulletSpeed = 2000f,
         VelocityDecay = 0.2f,
         MinBulletSpeed = 600f,
@@ -24,7 +57,7 @@ public class GunData
         HitShakeStrength = 2.6f,
         CameraKickDistance = 3.4f,
         BulletsPerShot = 1,
-        SpreadAngle = 0.3325f,
+        SpreadAngle = 0.2325f, //0.3325f
         BurstCount = 0,
         BurstDelay = 0f,
         RecoilRotationKick = 5.8f,
@@ -35,48 +68,20 @@ public class GunData
         MaxBounces = 0,
     };
 
-    public static Gun EnemyVAL = new Gun
-    {
-        AmmoType = AmmoType.Light,
-        SpriteName = "gun_asval",
-        SpriteOrigin = new Vector2(1f, 4f),
-        MuzzleOffset = new Vector2(18f, -1f),
-        Damage = 1f,
-        MagSize = 15f,
-        ReloadTime = 1.5f,
-        FireRate = 15f,
-        BulletSpeed = 1500f,
-        VelocityDecay = 0.3f,
-        MinBulletSpeed = 500f,
-        BulletScale = 0.8f,
-        HitStop = 0.07f,
-        Automatic = true,
-        HitShakeStrength = 2.6f,
-        CameraKickDistance = 3.4f,
-        BulletsPerShot = 1,
-        SpreadAngle = 0.2725f,
-        BurstCount = 0,
-        BurstDelay = 0f,
-        RecoilRotationKick = 5.8f,
-        RecoilReturnSpeed = 8.5f,
-        AimDrag = 1f,
-        CanBounce = false,
-        MaxBounces = 0,
-    };
-
     // Assault Rifles
     public static Gun ScrapRifle = new Gun
     {
         AmmoType = AmmoType.Medium,
         SpriteName = "gun_scraprifle",
-        SpriteOrigin = new Vector2(1f, 4f),
+        DroppedSpriteName = "gun_scraprifle_drop",
+        SpriteOrigin = new Vector2(-1f, 4f),
         MuzzleOffset = new Vector2(15f, -1f),
         Damage = 1.5f,
-        MagSize = 17f,
+        MagSize = 20f,
         ReloadTime = 2.5f,
-        FireRate = 6f,
+        FireRate = 9f,
         SpreadAngle = 0.21f,
-        BulletSpeed = 1150f,
+        BulletSpeed = 1550f,
         VelocityDecay = 0.4f,
         MinBulletSpeed = 400f,
         BulletScale = 0.7f,
@@ -220,16 +225,17 @@ public class GunData
     {
         AmmoType = AmmoType.Heavy,
         SpriteName = "gun_shotgun",
+        DroppedSpriteName = "gun_shotgun_drop",
         Damage = 1f,
         MagSize = 6f,
         ReloadTime = 2.5f,
         FireRate = 1.5f,
         SpreadAngle = 0.29f,
-        BulletsPerShot = 7,
-        BulletSpeed = 1350f,
-        VelocityDecay = 4.5f,
-        MinBulletSpeed = 0f,
-        BulletScale = 0.75f,
+        BulletsPerShot = 5,
+        BulletSpeed = 1850f,
+        VelocityDecay = 5.5f,
+        MinBulletSpeed = 200f,
+        BulletScale = 0.55f,
         HitStop = 0.12f,
         Automatic = false,
         UseSpeedVariation = true,
@@ -239,8 +245,19 @@ public class GunData
         HitShakeStrength = 3.5f,
         CameraKickDistance = 13.5f,
         EquippedMoveSpeedMultiplier = 0.85f,
-        AimDrag = 1.9f,
+        AimDrag = 4f,
         CanBounce = false,
         MaxBounces = 0
     };
+
+    
+    public static readonly Gun[] EnemyGunPool =
+    [
+        VAL,
+        ScrapRifle,
+        Shotgun,
+    ];
+
+    public static Gun PickRandomEnemyGun(Random rng) =>
+        EnemyGunPool[rng.Next(EnemyGunPool.Length)];
 }
