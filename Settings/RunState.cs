@@ -18,7 +18,7 @@ public class RunState
     {
         return new RunState
         {
-            Health = 990f,
+            Health = Settings.PlayerMaxHealth,
             MagAmmo = new Dictionary<Gun, int>
             {
                 [GunData.ScrapRifle] = (int)GunData.ScrapRifle.MagSize,

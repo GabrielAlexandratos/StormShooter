@@ -28,7 +28,7 @@ public class Player
     private Vector2 _lastMoveDir = Vector2.UnitX;
     public float SpeedMultiplier = 1f;
 
-    public float MaxHealth = 60f;
+    public float MaxHealth = Settings.PlayerMaxHealth;
     public float Health;
     public bool IsAlive => Health > 0f;
     public Action OnDeath;

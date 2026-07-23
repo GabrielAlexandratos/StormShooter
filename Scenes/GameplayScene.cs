@@ -207,7 +207,7 @@ public class GameplayScene : Scene
 
         Vector2 spawnPos = FindSpawnPosition();
         _player = new Player(spawnPos, Settings.PlayerSpeed, _playerIdleTexture, _playerWalkTexture);
-        _player.Health = _runState.Health;
+        _player.Health = MathHelper.Clamp(_runState.Health, 0f, _player.MaxHealth);
         _player.OnFootstep += dir =>
         {
             SoundManager.PlayRandom(0.40f, (_random.NextSingle() - 0.5f) * 0.08f, "snowstep1", "snowstep2", "snowstep3");
@@ -445,7 +445,8 @@ public class GameplayScene : Scene
         int hBarH = (int)(7 * currentScale);
         int hBarX = finalDestRect.X + (int)(10 * currentScale);
         int hBarY = finalDestRect.Y + (int)(10 * currentScale);
-        int hBarFill = (int)(hBarW * (_player.Health / _player.MaxHealth));
+        float healthRatio = MathHelper.Clamp(_player.Health / _player.MaxHealth, 0f, 1f);
+        int hBarFill = (int)(hBarW * healthRatio);
         spriteBatch.Draw(_pixel, new Rectangle(hBarX, hBarY, hBarW, hBarH), Color.Black * 0.5f);
         spriteBatch.Draw(_pixel, new Rectangle(hBarX, hBarY, hBarFill, hBarH), Color.Red);
 

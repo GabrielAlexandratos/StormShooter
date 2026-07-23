@@ -8,6 +8,7 @@ public class Settings
 
     // Player settings
     public const int PlayerSpeed = 50;
+    public const float PlayerMaxHealth = 60f;
     public const float EnemyHitShakeDuration = 0.05f;
 
     public const int TileSize = 10;
