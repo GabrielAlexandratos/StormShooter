@@ -13,3 +13,4 @@ public class Settings
 
     public const int TileSize = 10;
 }
+
